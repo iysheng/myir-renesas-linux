@@ -545,6 +545,20 @@
 
 };
 
+&i2c3 {
+	pinctrl-0 = <&i2c3_pins>;
+	pinctrl-names = "default";
+	clock-frequency = <400000>;
+	status = "okay";
+
+	E2PROM:24C256C@50 {
+		compatible = "atmel,24c256";
+		reg = <0x50>;
+		pagesize = <64>;
+	};
+
+};
+
 &audio_clk1{
 	clock-frequency = <11289600>;
 };
