@@ -367,6 +367,21 @@
 						<RZG2L_PORT_PINMUX(38, 1, 1)>; /* RxD */
 	};
 
+	scif1_pins: scif1 {
+			pinmux = <RZG2L_PORT_PINMUX(40, 0, 1)>, /* TxD */
+						<RZG2L_PORT_PINMUX(40, 1, 1)>; /* RxD */
+	};
+
+	scif2_pins: scif2 {
+			pinmux = <RZG2L_PORT_PINMUX(48, 0, 1)>, /* TxD */
+						<RZG2L_PORT_PINMUX(48, 1, 1)>;/* RxD */
+	};
+
+	scif3_pins: scif3 {
+			pinmux = <RZG2L_PORT_PINMUX(0, 0, 5)>, /* TxD */
+						<RZG2L_PORT_PINMUX(0, 1, 5)>;/* RxD */
+	};
+
 };
 
 &sbc {
@@ -544,6 +559,26 @@
 	pinctrl-0 = <&scif0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+/* RS485 */
+&scif1 {
+	pinctrl-0 = <&scif1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&scif2 {
+        pinctrl-0 = <&scif2_pins>;
+        pinctrl-names = "default";
+        status = "okay";
+};
+
+/* RS232 */
+&scif3 {
+        pinctrl-0 = <&scif3_pins>;
+        pinctrl-names = "default";
+        status = "okay";
 };
 
 &hsusb {
