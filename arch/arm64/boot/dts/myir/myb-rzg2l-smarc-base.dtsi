@@ -507,6 +507,12 @@
 	memory-region = <&global_cma>;
 	dr_mode = "otg";
 	status = "okay";
+
+	port {
+		usbotg_hs_ep: endpoint {
+				remote-endpoint = <&con_usbotg_hs_ep>;
+		};
+	};
 };
 
 &ehci1 {
@@ -530,6 +536,23 @@
 	clock-frequency = <100000>;
 	status = "okay";
 
+	ptn5150: ptn5150@3d {
+		compatible = "nxp,ptn5150";
+		reg = <0x3d>;
+		pinctrl-names = "default";
+		connect-gpios = <&pinctrl RZG2L_GPIO(1, 1) GPIO_ACTIVE_HIGH>;
+		status = "okay";
+
+		connector {
+				compatible = "usb-c-connector";
+				label = "USB-C";
+				port {
+						con_usbotg_hs_ep: endpoint {
+										remote-endpoint = <&usbotg_hs_ep>;
+						};
+				};
+		};
+	};
 };
 
 &i2c1 {
