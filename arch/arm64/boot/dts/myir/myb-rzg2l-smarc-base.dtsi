@@ -537,6 +537,12 @@
 	pinctrl-names = "default";
 	clock-frequency = <100000>;
 	status = "okay";
+
+    rx8025t: rx8025t@32 {
+		compatible = "epson,rx8025t";
+		reg = <0x32>;
+    };
+
 };
 
 &audio_clk1{
