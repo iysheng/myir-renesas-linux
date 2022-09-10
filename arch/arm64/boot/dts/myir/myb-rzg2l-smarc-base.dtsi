@@ -114,6 +114,12 @@
 			clock-frequency = <24000000>;
 	};
 
+	clk_ext_audio: clk_ext_audio {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <11289600>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -124,6 +130,35 @@
 			linux,default-trigger = "heartbeat";
 		};
 	};
+
+
+    sound_rzg2l: sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,bitclock-master = <&cpu_dai>;
+		simple-audio-card,frame-master = <&cpu_dai>;
+		simple-audio-card,mclk-fs = <256>;
+		simple-audio-card,widgets =
+				"Microphone", "Microphone Jack",
+				"Headphone", "Headphone Jack",
+				"Speaker", "Speaker Ext",
+				"Line", "Line In Jack";
+		simple-audio-card,routing =
+				"MIC_IN", "Microphone Jack",
+				"Microphone Jack", "Mic Bias",
+				"LINE_IN", "Line In Jack",
+				"Headphone Jack", "HP_OUT",
+				"Speaker Ext", "LINE_OUT";
+
+		cpu_dai: simple-audio-card,cpu {
+				sound-dai = <&ssi0>;
+		};
+		codec_dai: simple-audio-card,codec {
+				sound-dai = <&sgtl5000>;
+				clocks = <&versa3 3>;
+		};
+    };
+
 };
 
 &adc {
@@ -566,6 +601,16 @@
 		reg = <0x32>;
     };
 
+	sgtl5000: audio-codec@a {
+		#sound-dai-cells = <0>;
+		compatible = "fsl,sgtl5000";
+		reg = <0xa>;
+		VDDIO-supply = <&reg_3p3v>;
+		VDDA-supply = <&reg_3p3v>;
+		VDDD-supply = <&reg_1p8v>;
+		clocks = <&clk_ext_audio>;
+	};
+
 };
 
 &i2c3 {
@@ -580,6 +625,24 @@
 		pagesize = <64>;
 	};
 
+	versa3: versa3@68 {
+		compatible = "renesas,5p35023";
+		reg = <0x68>;
+		#clock-cells = <1>;
+		clocks = <&x1_clk>;
+		clock-names = "x1";
+		assigned-clocks = <&versa3 0>,
+				<&versa3 1>,
+				<&versa3 2>,
+				<&versa3 3>,
+				<&versa3 4>,
+				<&versa3 5>;
+		assigned-clock-rates =  <12288000>, <25000000>,
+								<12000000>, <11289600>,
+								<11289600>, <24000000>;
+		clock-divider-read-only = <1>, <1>, <1>, <1>, <1>;
+		clock-flags = <2176>, <2176>, <2176>, <2052>, <2176>, <2048>;
+	};
 };
 
 &audio_clk1{
