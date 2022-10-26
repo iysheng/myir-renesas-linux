@@ -580,6 +580,7 @@
 
 &ehci1 {
 	memory-region = <&global_cma>;
+	status = "okay";
 };
 
 &ohci1 {
