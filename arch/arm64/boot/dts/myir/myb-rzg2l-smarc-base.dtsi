@@ -129,6 +129,13 @@
 		clock-frequency = <24000000>;
 	};
 
+        backlight {
+                compatible = "pwm-backlight";
+                pwms = <&gpt4 0 50000>;
+                brightness-levels = <0 2 8 16 32 64 128 255>;
+                default-brightness-level = <7>;
+        };
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -445,6 +452,9 @@
 						<RZG2L_PORT_PINMUX(0, 1, 5)>;/* RxD */
 	};
 
+        gpt4_pins: gpt4 {
+                pinmux = <RZG2L_PORT_PINMUX(43, 0, 2)>; /* Channel A */
+        };
 };
 
 &sbc {
@@ -542,9 +552,10 @@
 };
 
 &gpt4 {
+        pinctrl-0 = <&gpt4_pins>;
 	pinctrl-names = "default";
-	channel = "both_AB";
-	status = "disabled";
+	channel = "channel_A";
+	status = "okay";
 };
 
 &usb2_phy1 {
