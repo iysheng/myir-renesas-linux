@@ -48,7 +48,7 @@
 	};
 
 	panel_powr1: regulator-panel_powr1 {
-		compatible = "regulator-gpio";
+		compatible = "regulator-fixed";
 		regulator-name = "panel-power1";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
@@ -59,7 +59,7 @@
 	};
 
 	panel_powr2: regulator-panel_powr2 {
-		compatible = "regulator-gpio";
+		compatible = "regulator-fixed";
 		regulator-name = "panel-power2";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
