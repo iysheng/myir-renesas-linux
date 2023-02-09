@@ -524,12 +524,12 @@
 	pinctrl-1 = <&sdhi1_pins_uhs>;
 	pinctrl-names = "default", "state_uhs";
 	vmmc-supply = <&reg_3p3v>;
-        vqmmc-supply = <&reg_1p8v>;
+        vqmmc-supply = <&reg_3p3v>;
 	cd-gpios = <&pinctrl RZG2L_GPIO(19, 0) GPIO_ACTIVE_LOW>;
 	bus-width = <4>;
-	sd-uhs-sdr50;
-	sd-uhs-sdr104;
-	sd-uhs-ddr50;
+//	sd-uhs-sdr50;
+//	sd-uhs-sdr104;
+//	sd-uhs-ddr50;
 	disable-wp;
 	status = "okay";
 };
