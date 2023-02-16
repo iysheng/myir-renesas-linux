@@ -209,7 +209,7 @@
             reg = <0x38>;
             interrupt-parent = <&pinctrl>;
             interrupts = <RZG2L_GPIO(48, 2) IRQ_TYPE_EDGE_FALLING>;
-            reset-gpios = <&pinctrl RZG2L_GPIO(41, 1) GPIO_ACTIVE_LOW>;
+            reset-gpios = <&pinctrl RZG2L_GPIO(42, 3) GPIO_ACTIVE_LOW>;
             touchscreen-size-x=<800>;
             touchscreen-size-y=<480>;
     };
