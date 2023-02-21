@@ -212,7 +212,11 @@
 		reg = <0x32>;
     };
 
-
+	E2PROM:24C256C@50 {
+		compatible = "atmel,24c256";
+		reg = <0x50>;
+		pagesize = <64>;
+	};
 
 };
 
