@@ -8,16 +8,6 @@
 #include <dt-bindings/pinctrl/rzg2l-pinctrl.h>
 #include <dt-bindings/gpio/gpio.h>
 
-/*
- * DIP-Switch SW1 setting
- * 1 : High; 0: Low
- * SW1-2 : SW_SD0_DEV_SEL	(1: eMMC; 0: uSD)
- * SW1-3 : SW_ET0_EN_N		(0: ETHER0; 1: CAN0,CAN1,SSI1,RSPI1)
- * Please change below MACROs corespondingly to SW1 setting
- */
-
-#define	SW_SW0_DEV_SEL	1
-#define	SW_ET0_EN_N	1
 
 / {
 	aliases {
@@ -69,20 +59,6 @@
 		regulator-max-microvolt = <5000000>;
 	};
 
-	vccq_sdhi1: regulator-vccq-sdhi1 {
-		compatible = "regulator-gpio";
-
-		regulator-name = "SDHI1 VccQ";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <3300000>;
-
-		gpios = <&pinctrl RZG2L_GPIO(6, 1) GPIO_ACTIVE_HIGH>;
-
-		gpios-states = <1>;
-		states = <3300000 1
-			  1800000 0>;
-	};
-
 	x1_clk: x1-clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -95,29 +71,6 @@
 		clock-frequency = <24000000>;
 	};
 
-	ov5645_vdddo_1v8: 1p8v {
-		compatible = "regulator-fixed";
-		regulator-name = "camera_vdddo";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <1800000>;
-		regulator-always-on;
-	};
-
-	ov5645_vdda_2v8: 2p8v {
-		compatible = "regulator-fixed";
-		regulator-name = "camera_vdda";
-		regulator-min-microvolt = <2800000>;
-		regulator-max-microvolt = <2800000>;
-		regulator-always-on;
-	};
-
-	ov5645_vddd_1v5: 1p5v {
-		compatible = "regulator-fixed";
-		regulator-name = "camera_vddd";
-		regulator-min-microvolt = <1500000>;
-		regulator-max-microvolt = <1500000>;
-		regulator-always-on;
-	};
 };
 
 &audio_clk1{
@@ -135,14 +88,14 @@
 };
 
 &canfd {
-	pinctrl-0 = <&canfd0_pins &canfd1_pins>;
+	pinctrl-0 = <&canfd0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 	channel0 {
 		status = "okay";
 	};
 	channel1 {
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -165,11 +118,11 @@
 	pinctrl-0 = <&ether0_pins>;
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
-	phy-mode = "rgmii";
+	phy-mode = "rgmii-id";
 	status = "okay";
 
-	phy0: ethernet-phy@7 {
-		reg = <7>;
+	phy0: ethernet-phy@4 {
+		reg = <4>;
 		rxc-skew-psec = <2400>;
 		txc-skew-psec = <2400>;
 		rxdv-skew-psec = <0>;
@@ -184,7 +137,7 @@
 		txd3-skew-psec = <0>;
 
 		interrupt-parent = <&pinctrl>;
-		interrupts = <RZG2L_GPIO(5, 1) IRQ_TYPE_LEVEL_LOW>;
+		interrupts = <RZG2L_GPIO(4, 5) IRQ_TYPE_LEVEL_LOW>;
 	};
 };
 
@@ -192,11 +145,11 @@
 	pinctrl-0 = <&ether1_pins>;
 	pinctrl-names = "default";
 	phy-handle = <&phy1>;
-	phy-mode = "rgmii";
+	phy-mode = "rgmii-id";
 	status = "okay";
 
-	phy1: ethernet-phy@7 {
-		reg = <7>;
+	phy1: ethernet-phy@6 {
+		reg = <6>;
 		rxc-skew-psec = <2400>;
 		txc-skew-psec = <2400>;
 		rxdv-skew-psec = <0>;
@@ -211,7 +164,7 @@
 		txd3-skew-psec = <0>;
 
 		interrupt-parent = <&pinctrl>;
-		interrupts = <RZG2L_GPIO(18, 5) IRQ_TYPE_LEVEL_LOW>;
+		interrupts = <RZG2L_GPIO(8, 2) IRQ_TYPE_LEVEL_LOW>;
 	};
 };
 
@@ -255,32 +208,13 @@
 		pinmux = <RZG2L_PORT_PINMUX(6, 2, 1)>; /* ADC_TRG */
 	};
 
-	canfd0_en {
-		gpio-hog;
-		gpios = <RZG2L_GPIO(2, 2) GPIO_ACTIVE_LOW>;
-		output-high;
-		line-name = "canfd0_en";
-	};
-
-	canfd1_en {
-		gpio-hog;
-		gpios = <RZG2L_GPIO(2, 3) GPIO_ACTIVE_LOW>;
-		output-high;
-		line-name = "canfd1_en";
-	};
-
 	canfd0_pins: can0 {
-		pinmux = <RZG2L_PORT_PINMUX(1, 1, 3)>, /* TX */
-			 <RZG2L_PORT_PINMUX(1, 2, 3)>; /* RX */
-	};
-
-	canfd1_pins: can1 {
-		pinmux = <RZG2L_PORT_PINMUX(2, 0, 3)>, /* TX */
-			 <RZG2L_PORT_PINMUX(2, 1, 3)>; /* RX */
+		pinmux = <RZG2L_PORT_PINMUX(6, 1, 3)>, /* TX */
+			 <RZG2L_PORT_PINMUX(6, 2, 3)>; /* RX */
 	};
 
 	ether0_pins: eth0 {
-		pinmux = <RZG2L_PORT_PINMUX(4, 5, 1)>, /* ET0_LINKSTA */
+		pinmux =
 			 <RZG2L_PORT_PINMUX(4, 3, 1)>, /* ET0_MDC */
 			 <RZG2L_PORT_PINMUX(4, 4, 1)>, /* ET0_MDIO */
 			 <RZG2L_PORT_PINMUX(1, 0, 1)>, /* ET0_TXC */
@@ -298,7 +232,7 @@
 	};
 
 	ether1_pins: eth1 {
-		pinmux = <RZG2L_PORT_PINMUX(10, 4, 1)>, /* ET1_LINKSTA */
+		pinmux =
 			 <RZG2L_PORT_PINMUX(10, 2, 1)>, /* ET1_MDC */
 			 <RZG2L_PORT_PINMUX(10, 3, 1)>, /* ET1_MDIO */
 			 <RZG2L_PORT_PINMUX(7, 0, 1)>, /* ET1_TXC */
@@ -505,11 +439,11 @@
 	pinctrl-names = "default", "state_uhs";
 
 	vmmc-supply = <&reg_3p3v>;
-	vqmmc-supply = <&vccq_sdhi1>;
+	vqmmc-supply = <&reg_3p3v>;
 	cd-gpios = <&pinctrl RZG2L_GPIO(0, 2) GPIO_ACTIVE_LOW>;
 	bus-width = <4>;
-	sd-uhs-sdr50;
-	sd-uhs-sdr104;
+	// sd-uhs-sdr50;
+	// sd-uhs-sdr104;
 	status = "okay";
 };
 
