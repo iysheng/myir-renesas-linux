@@ -218,6 +218,24 @@
 		pagesize = <64>;
 	};
 
+	ptn5150: ptn5150@3d {
+		compatible = "nxp,ptn5150";
+		reg = <0x3d>;
+		pinctrl-names = "default";
+		connect-gpios = <&pinctrl RZG2L_GPIO(0, 3) GPIO_ACTIVE_HIGH>;
+		status = "okay";
+
+		connector {
+				compatible = "usb-c-connector";
+				label = "USB-C";
+				port {
+						con_usbotg_hs_ep: endpoint {
+										remote-endpoint = <&usbotg_hs_ep>;
+						};
+				};
+		};
+	};
+
 };
 
 &i2c1 {
@@ -240,6 +258,12 @@
 &ohci0 {
 	dr_mode = "otg";
 	status = "okay";
+
+	port {
+		usbotg_hs_ep: endpoint {
+				remote-endpoint = <&con_usbotg_hs_ep>;
+		};
+	};
 };
 
 &ohci1 {
@@ -310,13 +334,6 @@
 			 <RZG2L_PORT_PINMUX(6, 3, 6)>; /* RxD */
 	};
 
-	sd1_pwr_en {
-		gpio-hog;
-		gpios = <RZG2L_GPIO(0, 3) GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "sd1_pwr_en";
-	};
-
 	/* Support pinctrl for MMC function of SDHI0*/
 	sdhi0_pins: sd0 {
 		sd0_data {
@@ -364,9 +381,7 @@
 	};
 
 	usb0_pins: usb0 {
-		pinmux = <RZG2L_PORT_PINMUX(5, 0, 1)>, /* VBUS */
-			 <RZG2L_PORT_PINMUX(5, 2, 1)>, /* OVC */
-			 <RZG2L_PORT_PINMUX(5, 3, 1)>; /* OTG_ID */
+		pinmux = <RZG2L_PORT_PINMUX(5, 3, 1)>; /* OTG_ID */
 	};
 
 	usb1_pins: usb1 {
