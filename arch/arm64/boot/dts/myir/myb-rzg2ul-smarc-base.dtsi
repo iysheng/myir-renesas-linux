@@ -71,6 +71,24 @@
 		clock-frequency = <24000000>;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		led0 {
+			gpios = <&pinctrl RZG2L_GPIO(4, 2) GPIO_ACTIVE_LOW>;
+			label = "LED0";
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+
+		led1 {
+			gpios = <&NCA9555 15 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+	};
+
 };
 
 &audio_clk1{
@@ -176,15 +194,28 @@
 &i2c0 {
 	pinctrl-0 = <&i2c0_pins>;
 	pinctrl-names = "default";
-
 	status = "okay";
+
+    rx8025t: rx8025t@32 {
+		compatible = "epson,rx8025t";
+		reg = <0x32>;
+    };
+
+
+
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_pins>;
 	pinctrl-names = "default";
+	status = "okay";
 
-	status = "disabled";
+	NCA9555: NCA9555@20 {
+			compatible = "analogtek,at9555";
+			reg = <0x20>;
+			#gpio-cells = <2>;
+			gpio_base = <512>;
+	};
 };
 
 &phyrst {
