@@ -271,8 +271,6 @@
 };
 
 &pinctrl {
-	pinctrl-0 = <&sound_clk_pins>;
-	pinctrl-names = "default";
 
 	adc_pins: adc {
 		pinmux = <RZG2L_PORT_PINMUX(10, 4, 2)>; /* ADC_TRG */
@@ -380,12 +378,13 @@
 		input-enable;
 	};
 
-	usb0_pins: usb0 {
-		pinmux = <RZG2L_PORT_PINMUX(5, 3, 1)>; /* OTG_ID */
-	};
+	// usb0_pins: usb0 {
+	// 	pinmux = <RZG2L_PORT_PINMUX(5, 3, 1)>; /* OTG_ID */
+	// };
 
 	usb1_pins: usb1 {
-		pinmux = <RZG2L_PORT_PINMUX(5, 4, 5)>, /* VBUS */
+		pinmux = 
+		//<RZG2L_PORT_PINMUX(5, 4, 5)>, /* VBUS */
 			 <RZG2L_PORT_PINMUX(6, 0, 1)>; /* OVC */
 	};
 
@@ -509,8 +508,8 @@
 };
 
 &usb2_phy0 {
-	pinctrl-0 = <&usb0_pins>;
-	pinctrl-names = "default";
+	// pinctrl-0 = <&usb0_pins>;
+	// pinctrl-names = "default";
 
 	vbus-supply = <&vbus0_usb2>;
 	status = "okay";

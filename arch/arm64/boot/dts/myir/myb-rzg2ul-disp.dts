@@ -52,6 +52,12 @@
 		compatible = "renesas,vspm_if";
 	};
 
+	clk_ext_audio: clk_ext_audio {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <11289600>;
+	};
+
 	panel_powr1: regulator-panel_powr1 {
 		compatible = "regulator-fixed";
 		regulator-name = "panel-power1";
@@ -89,6 +95,43 @@
 		};
 	};
 
+    sound_rzg2l: sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,bitclock-master = <&cpu_dai>;
+		simple-audio-card,frame-master = <&cpu_dai>;
+		simple-audio-card,mclk-fs = <256>;
+		simple-audio-card,widgets =
+				"Microphone", "Microphone Jack",
+				"Headphone", "Headphone Jack",
+				"Speaker", "Speaker Ext",
+				"Line", "Line In Jack";
+		simple-audio-card,routing =
+				"MIC_IN", "Microphone Jack",
+				"Microphone Jack", "Mic Bias",
+				"LINE_IN", "Line In Jack",
+				"Headphone Jack", "HP_OUT",
+				"Speaker Ext", "LINE_OUT";
+
+		cpu_dai: simple-audio-card,cpu {
+				sound-dai = <&ssi2>;
+		};
+		codec_dai: simple-audio-card,codec {
+				sound-dai = <&sgtl5000>;
+				clocks = <&versa3 3>;
+		};
+    };
+
+};
+
+&pinctrl {
+
+        ssi2_pins: ssi2 {
+                pinmux = <RZG2L_PORT_PINMUX(5, 2, 4)>, /* BCK */
+                         <RZG2L_PORT_PINMUX(5, 3, 4)>, /* RCK */
+                         <RZG2L_PORT_PINMUX(5, 4, 4)>; /* DATA */
+        };
+
 };
 
 &du {
@@ -119,4 +162,46 @@
 
 &ohci1 {
 	memory-region = <&global_cma>;
+};
+
+&ssi2 {
+	pinctrl-0 = <&ssi2_pins>;
+	pinctrl-0 = <&ssi2_pins &sound_clk_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sgtl5000: audio-codec@a {
+		#sound-dai-cells = <0>;
+		compatible = "fsl,sgtl5000";
+		reg = <0xa>;
+		VDDIO-supply = <&reg_3p3v>;
+		VDDA-supply = <&reg_3p3v>;
+		VDDD-supply = <&reg_1p8v>;
+		clocks = <&clk_ext_audio>;
+	};
+
+	versa3: versa3@68 {
+		compatible = "renesas,5p35023";
+		reg = <0x68>;
+		#clock-cells = <1>;
+		clocks = <&x1_clk>;
+		clock-names = "x1";
+		assigned-clocks = <&versa3 0>,
+				<&versa3 1>,
+				<&versa3 2>,
+				<&versa3 3>,
+				<&versa3 4>,
+				<&versa3 5>;
+		assigned-clock-rates =  <12288000>, <25000000>,
+								<12000000>, <11289600>,
+								<11289600>, <24000000>;
+		clock-divider-read-only = <1>, <1>, <1>, <1>, <1>;
+		clock-flags = <2176>, <2176>, <2176>, <2052>, <2176>, <2048>;
+	};
 };
