@@ -101,6 +101,13 @@
 			default-state = "on";
 			linux,default-trigger = "heartbeat";
 		};
+
+		led2 {
+			gpios = <&NCA9555 14 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
 	};
 
 };
