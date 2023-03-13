@@ -259,6 +259,30 @@
 			#gpio-cells = <2>;
 			gpio_base = <512>;
 	};
+
+	ov5640: camera@3c {
+		compatible = "ovti,ov5640";
+		reg = <0x3c>;
+		status = "okay";
+
+		clocks = <&clk_ext_camera>;
+		clock-names = "xclk";
+		clock-frequency = <24000000>;
+		virtual-channel = /bits/ 8 <0>;
+
+		gate-gpios =  <&pinctrl RZG2L_GPIO(2, 2) GPIO_ACTIVE_HIGH>;  // power
+		reset-gpios  =  <&pinctrl RZG2L_GPIO(2, 3) GPIO_ACTIVE_LOW>;
+		powerdown-gpios  =  <&pinctrl RZG2L_GPIO(6, 0) GPIO_ACTIVE_HIGH>;
+
+		port {
+			ov5640_csi2_ep: endpoint {
+				clock-lanes = <0>;
+				data-lanes = <1 2>;
+				remote-endpoint = <&csi2_in>;
+			};
+		};
+
+	};
 };
 
 &phyrst {
@@ -403,16 +427,6 @@
 		input-enable;
 	};
 
-	// usb0_pins: usb0 {
-	// 	pinmux = <RZG2L_PORT_PINMUX(5, 3, 1)>; /* OTG_ID */
-	// };
-
-	usb1_pins: usb1 {
-		pinmux = 
-		//<RZG2L_PORT_PINMUX(5, 4, 5)>, /* VBUS */
-			 <RZG2L_PORT_PINMUX(6, 0, 1)>; /* OVC */
-	};
-
 	du_pins: du {
 		data {
 			pinmux = <RZG2L_PORT_PINMUX(11, 2, 6)>,
@@ -516,17 +530,11 @@
 };
 
 &usb2_phy0 {
-	// pinctrl-0 = <&usb0_pins>;
-	// pinctrl-names = "default";
-
 	vbus-supply = <&vbus0_usb2>;
 	status = "okay";
 };
 
 &usb2_phy1 {
-	pinctrl-0 = <&usb1_pins>;
-	pinctrl-names = "default";
-
 	status = "okay";
 };
 
@@ -539,7 +547,16 @@
 };
 
 &csi2 {
-	status = "disabled";
+	status = "okay";
+	ports {
+		port {
+			csi2_in: endpoint {
+				clock-lanes = <0>;
+				data-lanes = <1 2>;
+				remote-endpoint = <&ov5640_csi2_ep>;
+			};
+		};
+	};
 };
 
 &wdt0 {
