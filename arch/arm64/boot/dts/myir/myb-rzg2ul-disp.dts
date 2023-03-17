@@ -17,8 +17,8 @@
 
 	memory@48000000 {
 		device_type = "memory";
-		/* first 128MB is reserved for secure area. */
-		reg = <0x0 0x48000000 0x0 0x38000000>;
+		/* first 64MB is reserved for secure area. */
+		reg = <0 0x48000000 0 0x1C000000>;
 	};
 
 	reserved-memory {
@@ -30,12 +30,12 @@
 			compatible = "shared-dma-pool";
 			linux,cma-default;
 			reusable;
-			reg = <0x0 0x58000000 0x0 0x10000000>;
+			reg = <0x0 0x60000000 0x0 0x2000000>;
 		};
 		mmp_reserved: linux,multimedia {
 			compatible = "shared-dma-pool";
 			reusable;
-			reg = <0x00000000 0x68000000 0x0 0x8000000>;
+			reg = <0x00000000 0x62000000 0x0 0x2000000>;
 		};
 	};
 
