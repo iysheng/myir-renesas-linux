@@ -14,9 +14,9 @@ make ARCH=arm64 Image dtbs -j16
 else
 case $1
 	in
-	e) echo "init enviroment"; export PATH=/usr/bin:$PATH; unset LD_LIBRARY_PATH; source ../../03_Tools/Toolchains/sdk/core_red/environment-setup-aarch64-poky-linux;;
 	c) echo "do menuconfig";make ARCH=arm64 menuconfig;;
-	u) do_copy;;
+	d) echo "dtb->dts"; dtc -I dtb -O dts arch/arm64/boot/dts/myir/myb-rzg2l-disp.dtb > myir_rzg2.dts;;
+	e) echo "init enviroment"; export PATH=/usr/bin:$PATH; unset LD_LIBRARY_PATH; source ../../03_Tools/Toolchains/sdk/core_red/environment-setup-aarch64-poky-linux;;
 	g)
 	# gen patch
 	echo "gen patch";
@@ -26,6 +26,7 @@ case $1
 	# merge patch
 	echo "merge patch";
 	patch -i ~/Codes_of_pro/blackmagic4RZ/misc/linux_kernel_Documents.diff -p 1;;
+	u) do_copy;;
 	*) echo "No support this param $1 [g: gen patch] [m: merge patch]";;
 esac
 fi
