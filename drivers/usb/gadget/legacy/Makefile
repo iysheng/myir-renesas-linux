@@ -31,6 +31,7 @@ obj-$(CONFIG_USB_ETH)		+= g_ether.o
 obj-$(CONFIG_USB_GADGETFS)	+= gadgetfs.o
 obj-$(CONFIG_USB_FUNCTIONFS)	+= g_ffs.o
 obj-$(CONFIG_USB_MASS_STORAGE)	+= g_mass_storage.o
+# 开启 gadget serial 驱动
 obj-$(CONFIG_USB_G_SERIAL)	+= g_serial.o
 obj-$(CONFIG_USB_G_PRINTER)	+= g_printer.o
 obj-$(CONFIG_USB_MIDI_GADGET)	+= g_midi.o

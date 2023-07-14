@@ -931,16 +931,21 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 {
 	struct usb_configuration *c;
 
+	/*
+	 * 如果为 0 可以认为是这个配置无效
+	 * */
 	if (!config->bConfigurationValue)
 		return -EINVAL;
 
 	/* Prevent duplicate configuration identifiers */
+	/* 遍历这个设备的所有配置,避免这个设备重复添加 */
 	list_for_each_entry(c, &cdev->configs, list) {
 		if (c->bConfigurationValue == config->bConfigurationValue)
 			return -EBUSY;
 	}
 
 	config->cdev = cdev;
+	/* 将这个配置添加到 cdev 设备的配置链表（这里更坚定了我认为这个是 usb 设备的配置描述符）上 */
 	list_add_tail(&config->list, &cdev->configs);
 
 	INIT_LIST_HEAD(&config->functions);
@@ -1272,8 +1277,10 @@ EXPORT_SYMBOL_GPL(usb_string_id);
  */
 int usb_string_ids_tab(struct usb_composite_dev *cdev, struct usb_string *str)
 {
+	/* 为什么是从 next_string_id 开始编号的呢？？这个编号之前在哪里有更新过？ */
 	int next = cdev->next_string_id;
 
+	/* 遍历 str 数组中的所有条目 */
 	for (; str->s; ++str) {
 		if (unlikely(next >= 254))
 			return -ENODEV;
@@ -2377,7 +2384,9 @@ void composite_resume(struct usb_gadget *gadget)
 }
 
 /*-------------------------------------------------------------------------*/
-
+/* 注册 usb 混合驱动的时候，初始化的过程中(具体在 usb_composite_probe 函数)
+ * 会关联一个这个混合驱动模板
+ * */
 static const struct usb_gadget_driver composite_driver_template = {
 	.bind		= composite_bind,
 	.unbind		= composite_unbind,
@@ -2395,6 +2404,7 @@ static const struct usb_gadget_driver composite_driver_template = {
 };
 
 /**
+ * 注册一个 usb 复合驱动
  * usb_composite_probe() - register a composite driver
  * @driver: the driver to register
  *
@@ -2417,16 +2427,22 @@ int usb_composite_probe(struct usb_composite_driver *driver)
 	if (!driver || !driver->dev || !driver->bind)
 		return -EINVAL;
 
+	/* 如果 usb_composite_driver 名称为空，那么设置这个默认的名字为 composite */
 	if (!driver->name)
 		driver->name = "composite";
 
+	/* 使用一个 gadget_driver 模板赋值给这个 usb_composite_driver */
 	driver->gadget_driver = composite_driver_template;
 	gadget_driver = &driver->gadget_driver;
 
+	/* 使用 usb_composite_driver 的名字覆盖模板的功能 */
 	gadget_driver->function =  (char *) driver->name;
+	/* 使用 usb_composite_driver 的名字覆盖 device_driver 的名字 */
 	gadget_driver->driver.name = driver->name;
+	/* 使用 usb_composite_driver 的最大速度覆盖 usb_gadget_driver 的最大速度 */
 	gadget_driver->max_speed = driver->max_speed;
 
+	/* 注册的时候，就会尝试去匹配这个 gadget_driver */
 	return usb_gadget_probe_driver(gadget_driver);
 }
 EXPORT_SYMBOL_GPL(usb_composite_probe);

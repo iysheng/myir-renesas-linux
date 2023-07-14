@@ -43,6 +43,7 @@ struct usb_udc {
 
 static struct class *udc_class;
 static LIST_HEAD(udc_list);
+/* 关联那些没有匹配到 udc 驱动的 gadget 驱动 */
 static LIST_HEAD(gadget_driver_pending_list);
 static DEFINE_MUTEX(udc_lock);
 
@@ -655,8 +656,10 @@ EXPORT_SYMBOL_GPL(usb_gadget_vbus_disconnect);
 
 /**
  * usb_gadget_connect - software-controlled connect to USB host
+ * 软件控制链接到 USB 主机，关键是回调 gadget 的 pullup 成员函数
  * @gadget:the peripheral being connected
  *
+ * 使能 D+ （或者 D-）上拉。主机将开始枚举这个 gadget
  * Enables the D+ (or potentially D-) pullup.  The host will start
  * enumerating this gadget when the pullup is active and a VBUS session
  * is active (the link is powered).  This pullup is always enabled unless
@@ -1396,7 +1399,7 @@ void usb_del_gadget_udc(struct usb_gadget *gadget)
 EXPORT_SYMBOL_GPL(usb_del_gadget_udc);
 
 /* ------------------------------------------------------------------------- */
-
+/* 绑定 usb_gadget_driver 到 usb_udc */
 static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *driver)
 {
 	int ret;
@@ -1410,14 +1413,17 @@ static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *dri
 
 	usb_gadget_udc_set_speed(udc, driver->max_speed);
 
+	/* 调用 gadget driver 的 bind 函数 */
 	ret = driver->bind(udc->gadget, driver);
 	if (ret)
 		goto err1;
+	/* 告诉 udc 开始 */
 	ret = usb_gadget_udc_start(udc);
 	if (ret) {
 		driver->unbind(udc->gadget);
 		goto err1;
 	}
+	/* 促使主机开启枚举过程，即对 ep0 进行一些控制传输 */
 	usb_udc_connect_control(udc);
 
 	kobject_uevent(&udc->dev.kobj, KOBJ_CHANGE);
@@ -1441,6 +1447,7 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 		return -EINVAL;
 
 	mutex_lock(&udc_lock);
+	/* 如果 usb_gadget_driver 的 udc_name 存在, 从 udc_list 链表中查找这个 udc */
 	if (driver->udc_name) {
 		list_for_each_entry(udc, &udc_list, list) {
 			ret = strcmp(driver->udc_name, dev_name(&udc->dev));
@@ -1452,8 +1459,10 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 		else if (udc->driver)
 			ret = -EBUSY;
 		else
+			/* 如果找到了对应的 udc 驱动 */
 			goto found;
 	} else {
+		/* 否则的话查找第一个有效的 udc 驱动 */
 		list_for_each_entry(udc, &udc_list, list) {
 			/* For now we take the first one */
 			if (!udc->driver)
@@ -1461,6 +1470,9 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 		}
 	}
 
+	/* 如果这个 gadget 的 match_existing_only 标志为 0,那么在没有匹配到 udc 的时候将
+	 * 这个 gadget 驱动添加到 pending 链表上
+	 * */
 	if (!driver->match_existing_only) {
 		list_add_tail(&driver->pending, &gadget_driver_pending_list);
 		pr_info("udc-core: couldn't find an available UDC - added [%s] to list of pending drivers\n",
@@ -1473,6 +1485,9 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 		pr_warn("udc-core: couldn't find an available UDC or it's busy\n");
 	return ret;
 found:
+	/* 绑定 gadget 驱动到 udc 驱动
+	 * 切记，同一时刻 udc 只能绑定一个 driver, 即 udc 同一时刻只能有一个设备描述符
+	 * */
 	ret = udc_bind_to_driver(udc, driver);
 	mutex_unlock(&udc_lock);
 	return ret;

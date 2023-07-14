@@ -53,11 +53,15 @@ sysfs in /sys, and use "mdev" (in Busybox) or "udev" to make the
 
 Overview
 --------
+gadget 串口驱动是 Linux 的 USB gadget 驱动，是 USB device 侧的驱动。它运行在 Linux
+端（包含 USB 硬件设备）.举例来说，一个 PDA，一个嵌入式 Linux 系统或者一个带有 USB 卡的
+PC。
 The gadget serial driver is a Linux USB gadget driver, a USB device
 side driver.  It runs on a Linux system that has USB device side
 hardware; for example, a PDA, an embedded Linux system, or a PC
 with a USB development card.
 
+gadget 串口驱动借助 USB 线通过 CDC/ACM 驱动或者一个实际的 USB 转串口驱动和主机 PC 通信。
 The gadget serial driver talks over USB to either a CDC ACM driver
 or a generic USB serial driver running on a host PC::
 
@@ -81,32 +85,45 @@ or a generic USB serial driver running on a host PC::
   | System                   USB Stack   |
    --------------------------------------
 
+在 device 的 Linux 这端， gadget 串口驱动看起来就像是一个串口设备。
 On the device-side Linux system, the gadget serial driver looks
 like a serial device.
 
+在主机端，gadget serial 设备看起来就像是一个 CDC ACM 兼容的类设备或者一个简单
+的厂家专属的 bulk in 和 bulk out 端点设备，并且看起来和其他的串口设备都是相似的。
 On the host-side system, the gadget serial device looks like a
 CDC ACM compliant class device or a simple vendor specific device
 with bulk in and bulk out endpoints, and it is treated similarly
 to other serial devices.
 
+主机端的驱动可以选择任意 ACM 兼容的驱动或者可以使用简单 bulk in/out 接口和设备通信
+的驱动。
 The host side driver can potentially be any ACM compliant driver
 or any driver that can talk to a device with a simple bulk in/out
 interface.  Gadget serial has been tested with the Linux ACM driver,
 the Windows usbser.sys ACM driver, and the Linux USB generic serial
 driver.
 
+通过 gadget serial 驱动并且主机端也加载有 ACM 或者通用的串口驱动，你就可以使用一个
+串口线实现主机和 gadget 之间的通信。
 With the gadget serial driver and the host side ACM or generic
 serial driver running, you should be able to communicate between
 the host and the gadget side systems as if they were connected by a
 serial cable.
 
+gadget 串口驱动提供的是简单的不可靠的数据通信。目前还不支持流控或者真是串口设备的一些其他功能。
 The gadget serial driver only provides simple unreliable data
 communication.  It does not yet handle flow control or many other
 features of normal serial devices.
 
 
+安装串口驱动
 Installing the Gadget Serial Driver
 -----------------------------------
+为了使用 gadget 串口驱动，你必须在内核端配置开启 "Support for USB Gadgets",
+.. "Serial Gadget", 所以的上述配置都在 USB Gadget Support 选项卡下。然后重新
+编译内核和模块。
+
 To use the gadget serial driver you must configure the Linux gadget
 side kernel for "Support for USB Gadgets", for a "USB Peripheral
 Controller" (for example, net2280), and for the "Serial Gadget"
@@ -114,6 +131,7 @@ driver.  All this are listed under "USB Gadget Support" when
 configuring the kernel.  Then rebuild and install the kernel or
 modules.
 
+通过 modprobe 加载 gadget serial 驱动
 Then you must load the gadget serial driver.  To load it as an
 ACM device (recommended for interoperability), do this::
 
@@ -128,6 +146,7 @@ controller driver.  This must be done each time you reboot the gadget
 side Linux system.  You can add this to the start up scripts, if
 desired.
 
+系统端就可以使用 mdev 或者 udev 创建指定的节点。
 Your system should use mdev (from busybox) or udev to make the
 device nodes.  After this gadget driver has been set up you should
 then see a /dev/ttyGS0 node::
@@ -136,15 +155,20 @@ then see a /dev/ttyGS0 node::
   crw-rw----    1 root     root     253,   0 May  8 14:10 /dev/ttyGS0
   #
 
+注意，上述中的 253 主设备号是专门的。
 Note that the major number (253, above) is system-specific.  If
 you need to create /dev nodes by hand, the right numbers to use
 will be in the /sys/class/tty/ttyGS0/dev file.
 
+当你静态链接了 gadget serial 驱动，那么你可能想建立一个 /etc/inittab 的入口来运行 getty 命令。
 When you link this gadget driver early, perhaps even statically,
 you may want to set up an /etc/inittab entry to run "getty" on it.
 The /dev/ttyGS0 line should work like most any other serial port.
 
 
+如果 gadget 串口加载之后是一个 ACM 设备，你将希望在 windows 或者 linux 主机端使用 ACM 驱动。
+如果 gadget 串口被加载为一个 bulk in/out 设备，你将希望在主机端使用 Linux 通用的串口驱动。根据
+下属指令完成在主机端的驱动安装。
 If gadget serial is loaded as an ACM device you will want to use
 either the Windows or Linux ACM driver on the host side.  If gadget
 serial is loaded as a bulk in/out device, you will want to use the
@@ -253,6 +277,7 @@ system log saying something like "Gadget Serial converter now
 attached to ttyUSB0".
 
 
+使用 Minicom 或者 HyperTerminal 进行测试
 Testing with Minicom or HyperTerminal
 -------------------------------------
 Once the gadget serial driver and the host driver are both installed,
@@ -260,6 +285,7 @@ and a USB cable connects the gadget device to the host, you should
 be able to communicate over USB between the gadget and host systems.
 You can use minicom or HyperTerminal to try this out.
 
+在 gadget 端，运行命令 minicom -s 来配置一个新的 minicom 会话。
 On the gadget side run "minicom -s" to configure a new minicom
 session.  Under "Serial port setup" set "/dev/ttygserial" as the
 "Serial Device".  Set baud rate, data bits, parity, and stop bits,

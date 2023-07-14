@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * <linux/usb/gadget.h>
- *
+ * 这个文件描述和 gadget 核心对象和方法
+ * 一个 host 可以和多个 USB gadgets 通信，但是一个 gadget 只能和一个 host 通信。
  * We call the USB code inside a Linux-based peripheral device a "gadget"
  * driver, except for the hardware-specific bus glue.  One USB host can
  * talk to many USB gadgets, but the gadgets are only able to communicate
@@ -623,6 +624,7 @@ static inline int usb_gadget_activate(struct usb_gadget *gadget)
 
 /*-------------------------------------------------------------------------*/
 
+/* usb gadget driver 抽象 */
 /**
  * struct usb_gadget_driver - driver for usb gadget devices
  * @function: String describing the gadget's function
@@ -649,6 +651,8 @@ static inline int usb_gadget_activate(struct usb_gadget *gadget)
  * @udc_name: A name of UDC this driver should be bound to. If udc_name is NULL,
  *	this driver will be bound to any available UDC.
  * @pending: UDC core private data used for deferred probe of this driver.
+ * 如果这个标志是1,那么如果没有找到对应的 udc (usb device controller)，
+ * 返回一个错误值并且不要添加这个 gadget 驱动到 pending 驱动的链表
  * @match_existing_only: If udc is not found, return an error and don't add this
  *      gadget driver to list of pending driver
  *

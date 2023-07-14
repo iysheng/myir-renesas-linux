@@ -11,6 +11,7 @@ static DEFINE_MUTEX(func_lock);
 
 static struct usb_function_instance *try_get_usb_function_instance(const char *name)
 {
+	/* 这里用到了 usb_function_driver */
 	struct usb_function_driver *fd;
 	struct usb_function_instance *fi;
 
@@ -25,10 +26,12 @@ static struct usb_function_instance *try_get_usb_function_instance(const char *n
 			fi = ERR_PTR(-EBUSY);
 			break;
 		}
+		/* 匹配的时候会执行申请实例的这个动作 */
 		fi = fd->alloc_inst();
 		if (IS_ERR(fi))
 			module_put(fd->mod);
 		else
+			/* 因为 fi 是刚申请的内存空间，在这里关联这个 fd 到 fi->fd */
 			fi->fd = fd;
 		break;
 	}
@@ -36,11 +39,13 @@ static struct usb_function_instance *try_get_usb_function_instance(const char *n
 	return fi;
 }
 
+/* 根据名字查找功能实例 */
 struct usb_function_instance *usb_get_function_instance(const char *name)
 {
 	struct usb_function_instance *fi;
 	int ret;
 
+	/* 尝试获得 usb 功能实例 */
 	fi = try_get_usb_function_instance(name);
 	if (!IS_ERR(fi))
 		return fi;
@@ -88,6 +93,9 @@ void usb_put_function(struct usb_function *f)
 }
 EXPORT_SYMBOL_GPL(usb_put_function);
 
+/*
+ * usb 功能注册，功能应该是对应的接口描述符
+ * */
 int usb_function_register(struct usb_function_driver *newf)
 {
 	struct usb_function_driver *fd;

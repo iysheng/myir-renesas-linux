@@ -984,6 +984,7 @@
 			status = "disabled";
 		};
 
+		/* USBPHY Control 模块 */
 		phyrst: usbphy-ctrl@11c40000 {
 			compatible = "renesas,r9a07g044-usbphy-ctrl",
 				     "renesas,rzg2l-usbphy-ctrl";
@@ -995,6 +996,7 @@
 			status = "disabled";
 		};
 
+		/* USBPHY ch0 OTG-HOST 模块 */
 		ohci0: usb@11c50000 {
 			compatible = "generic-ohci";
 			reg = <0 0x11c50000 0 0x100>;
@@ -1009,6 +1011,7 @@
 			status = "disabled";
 		};
 
+		/* USBPHY ch1 OTG-HOST 模块 */
 		ohci1: usb@11c70000 {
 			compatible = "generic-ohci";
 			reg = <0 0x11c70000 0 0x100>;
@@ -1053,6 +1056,7 @@
 			status = "disabled";
 		};
 
+		/* 为什么 USB OTG 使用的是这一路 phy ？？？ Dual-Role-Device */
 		usb2_phy0: usb-phy@11c50200 {
 			compatible = "renesas,usb2-phy-r9a07g044",
 				     "renesas,rzg2l-usb2-phy";
@@ -1079,6 +1083,7 @@
 			status = "disabled";
 		};
 
+		/* USBPHY ch0 OTG-DEVICE 模块, gadgate 使用这一路 USB 接口 */
 		hsusb: usb@11c60000 {
 			compatible = "renesas,usbhs-r9a07g044",
 				     "renesas,rza2-usbhs";

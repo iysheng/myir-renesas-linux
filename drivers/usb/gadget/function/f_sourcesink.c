@@ -758,7 +758,7 @@ static void sourcesink_disable(struct usb_function *f)
 }
 
 /*-------------------------------------------------------------------------*/
-
+/* 功能建立过程？？？ */
 static int sourcesink_setup(struct usb_function *f,
 		const struct usb_ctrlrequest *ctrl)
 {
@@ -831,12 +831,16 @@ unknown:
 	return value;
 }
 
+/*
+ * 申请 usb function (感觉这个是配置描述符的等级)的函数接口
+ * */
 static struct usb_function *source_sink_alloc_func(
 		struct usb_function_instance *fi)
 {
 	struct f_sourcesink     *ss;
 	struct f_ss_opts	*ss_opts;
 
+	/* 申请一个 ss 实体 */
 	ss = kzalloc(sizeof(*ss), GFP_KERNEL);
 	if (!ss)
 		return ERR_PTR(-ENOMEM);
@@ -856,6 +860,7 @@ static struct usb_function *source_sink_alloc_func(
 	ss->bulk_qlen = ss_opts->bulk_qlen;
 	ss->iso_qlen = ss_opts->iso_qlen;
 
+	/* 初始化这个实体功能相关的部分 */
 	ss->function.name = "source/sink";
 	ss->function.bind = sourcesink_bind;
 	ss->function.set_alt = sourcesink_set_alt;
@@ -1241,14 +1246,19 @@ static void source_sink_free_instance(struct usb_function_instance *fi)
 	kfree(ss_opts);
 }
 
+/*
+ * 在查找这个功能并且匹配的时候会动态申请这个实例
+ * */
 static struct usb_function_instance *source_sink_alloc_inst(void)
 {
 	struct f_ss_opts *ss_opts;
 
+	/* 申请 struct f_ss_opts 内存空间 */
 	ss_opts = kzalloc(sizeof(*ss_opts), GFP_KERNEL);
 	if (!ss_opts)
 		return ERR_PTR(-ENOMEM);
 	mutex_init(&ss_opts->lock);
+	/* 关联释放这个实例的接口 */
 	ss_opts->func_inst.free_func_inst = source_sink_free_instance;
 	ss_opts->isoc_interval = GZERO_ISOC_INTERVAL;
 	ss_opts->isoc_maxpacket = GZERO_ISOC_MAXPACKET;
@@ -1261,6 +1271,7 @@ static struct usb_function_instance *source_sink_alloc_inst(void)
 
 	return &ss_opts->func_inst;
 }
+/* 调用的更加底层的实现注册 SourceSink 功能,在 sslb_modinit 函数注册的这个功能 */
 DECLARE_USB_FUNCTION(SourceSink, source_sink_alloc_inst,
 		source_sink_alloc_func);
 
@@ -1268,6 +1279,7 @@ static int __init sslb_modinit(void)
 {
 	int ret;
 
+	/* 在这里注册了这个功能, gadget zero 会用到这个功能 */
 	ret = usb_function_register(&SourceSinkusb_func);
 	if (ret)
 		return ret;

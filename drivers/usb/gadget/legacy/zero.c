@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * zero.c -- Gadget Zero, for USB development
+ * gadget 驱动例程
  *
  * Copyright (C) 2003-2008 David Brownell
  * Copyright (C) 2008 by Nokia Corporation
@@ -44,6 +45,7 @@
 
 #include "g_zero.h"
 /*-------------------------------------------------------------------------*/
+/* 声明这是一个复合 usb gadget 设备驱动 */
 USB_GADGET_COMPOSITE_OPTIONS();
 
 #define DRIVER_VERSION		"Cinco de Mayo 2008"
@@ -59,6 +61,7 @@ static const char longname[] = "Gadget Zero";
 static bool loopdefault = 0;
 module_param(loopdefault, bool, S_IRUGO|S_IWUSR);
 
+/* gadget 选项 */
 static struct usb_zero_options gzero_options = {
 	.isoc_interval = GZERO_ISOC_INTERVAL,
 	.isoc_maxpacket = GZERO_ISOC_MAXPACKET,
@@ -107,6 +110,7 @@ MODULE_PARM_DESC(autoresume_interval_ms,
 static unsigned autoresume_step_ms;
 /*-------------------------------------------------------------------------*/
 
+/* gadget zero 设备描述符实例 */
 static struct usb_device_descriptor device_desc = {
 	.bLength =		sizeof device_desc,
 	.bDescriptorType =	USB_DT_DEVICE,
@@ -152,12 +156,14 @@ static struct usb_gadget_strings *dev_strings[] = {
 static struct timer_list	autoresume_timer;
 static struct usb_composite_dev *autoresume_cdev;
 
+/* 定时器的回调函数 */
 static void zero_autoresume(struct timer_list *unused)
 {
 	struct usb_composite_dev	*cdev = autoresume_cdev;
 	struct usb_gadget		*g = cdev->gadget;
 
 	/* unconfigured devices can't issue wakeups */
+	/* 没有配置的设备不能触发唤醒 */
 	if (!cdev->config)
 		return;
 
@@ -181,6 +187,7 @@ static void zero_suspend(struct usb_composite_dev *cdev)
 			(autoresume_step_ms > max_autoresume * 1000))
 				autoresume_step_ms = autoresume * 1000;
 
+		/* 在 suspend 这里会修改定时器 */
 		mod_timer(&autoresume_timer, jiffies +
 			msecs_to_jiffies(autoresume_step_ms));
 		DBG(cdev, "suspend, wakeup in %d milliseconds\n",
@@ -215,12 +222,14 @@ static int ss_config_setup(struct usb_configuration *c,
 	switch (ctrl->bRequest) {
 	case 0x5b:
 	case 0x5c:
+		/* 实际执行 func_ss 的 setup 函数 */
 		return func_ss->setup(func_ss, ctrl);
 	default:
 		return -EOPNOTSUPP;
 	}
 }
 
+/* 关联 usb 配置描述符,这个确实是配置描述符 */
 static struct usb_configuration sourcesink_driver = {
 	.label                  = "source/sink",
 	.setup                  = ss_config_setup,
@@ -262,6 +271,7 @@ module_param_named(ss_iso_qlen, gzero_options.ss_iso_qlen, uint,
 		S_IRUGO|S_IWUSR);
 MODULE_PARM_DESC(iso_qlen, "depth of sourcesink queue for iso transfer");
 
+/* usb 复合设备的绑定函数 */
 static int zero_bind(struct usb_composite_dev *cdev)
 {
 	struct f_ss_opts	*ss_opts;
@@ -270,23 +280,31 @@ static int zero_bind(struct usb_composite_dev *cdev)
 
 	/* Allocate string descriptor numbers ... note that string
 	 * contents can be overridden by the composite_dev glue.
+	 * 填充 strings_dev 的 id 参数
 	 */
 	status = usb_string_ids_tab(cdev, strings_dev);
 	if (status < 0)
 		return status;
 
+	/*
+	 * 使用字符串中的 id 信息填充设备描述符中对应的编号（0表示没有对应的这个属性的字符串描述符）
+	 * */
 	device_desc.iManufacturer = strings_dev[USB_GADGET_MANUFACTURER_IDX].id;
 	device_desc.iProduct = strings_dev[USB_GADGET_PRODUCT_IDX].id;
 	device_desc.iSerialNumber = strings_dev[USB_GADGET_SERIAL_IDX].id;
 
 	autoresume_cdev = cdev;
+	/* 创建一个定时器 */
 	timer_setup(&autoresume_timer, zero_autoresume, 0);
 
+	/* 查找这个功能/接口实例, 在查找的时候会动态创建这个实例 */
 	func_inst_ss = usb_get_function_instance("SourceSink");
 	if (IS_ERR(func_inst_ss))
 		return PTR_ERR(func_inst_ss);
 
-	ss_opts =  container_of(func_inst_ss, struct f_ss_opts, func_inst);
+	/* 根据实例找到上层的 struct f_ss_opts 实例 */
+	ss_opts = container_of(func_inst_ss, struct f_ss_opts, func_inst);
+	/* 重写这个结构体的部分成员 */
 	ss_opts->pattern = gzero_options.pattern;
 	ss_opts->isoc_interval = gzero_options.isoc_interval;
 	ss_opts->isoc_maxpacket = gzero_options.isoc_maxpacket;
@@ -296,12 +314,14 @@ static int zero_bind(struct usb_composite_dev *cdev)
 	ss_opts->bulk_qlen = gzero_options.ss_bulk_qlen;
 	ss_opts->iso_qlen = gzero_options.ss_iso_qlen;
 
+	/* 获取一个功能实例 */
 	func_ss = usb_get_function(func_inst_ss);
 	if (IS_ERR(func_ss)) {
 		status = PTR_ERR(func_ss);
 		goto err_put_func_inst_ss;
 	}
 
+	/* 获取 loopback 相关的功能 */
 	func_inst_lb = usb_get_function_instance("Loopback");
 	if (IS_ERR(func_inst_lb)) {
 		status = PTR_ERR(func_inst_lb);
@@ -318,34 +338,47 @@ static int zero_bind(struct usb_composite_dev *cdev)
 		goto err_put_func_inst_lb;
 	}
 
+	/* 赋值 sourcesink 和 loopback 接口相关的字符串id 索引
+	 * 在 usb_add_config_only 的过程中会检查这个 iConfiguration 如果为0，
+	 * 表示无效，会返回出错
+	 * */
 	sourcesink_driver.iConfiguration = strings_dev[USB_GZERO_SS_DESC].id;
 	loopback_driver.iConfiguration = strings_dev[USB_GZERO_LB_DESC].id;
 
 	/* support autoresume for remote wakeup testing */
+	/* 表示不支持远程唤醒 */
 	sourcesink_driver.bmAttributes &= ~USB_CONFIG_ATT_WAKEUP;
 	loopback_driver.bmAttributes &= ~USB_CONFIG_ATT_WAKEUP;
+	/* 置空对应的描述符 */
 	sourcesink_driver.descriptors = NULL;
 	loopback_driver.descriptors = NULL;
+	/* 如果支持自动恢复，那么置位对应的 bit */
 	if (autoresume) {
 		sourcesink_driver.bmAttributes |= USB_CONFIG_ATT_WAKEUP;
 		loopback_driver.bmAttributes |= USB_CONFIG_ATT_WAKEUP;
 		autoresume_step_ms = autoresume * 1000;
 	}
 
-	/* support OTG systems */
+	/* support OTG systems 
+	 * 如果是 otg 系统，
+	 * */
 	if (gadget_is_otg(cdev->gadget)) {
 		if (!otg_desc[0]) {
 			struct usb_descriptor_header *usb_desc;
 
+			/* 申请一个 otg 描述符空间 */
 			usb_desc = usb_otg_descriptor_alloc(cdev->gadget);
 			if (!usb_desc) {
 				status = -ENOMEM;
 				goto err_conf_flb;
 			}
+			/* otg 描述符初始化 */
 			usb_otg_descriptor_init(cdev->gadget, usb_desc);
+			/* 关联 otg 描述符 */
 			otg_desc[0] = usb_desc;
 			otg_desc[1] = NULL;
 		}
+		/* 关联对应的描述符到对应的接口，表示这是一个 otg 设备 */
 		sourcesink_driver.descriptors = otg_desc;
 		sourcesink_driver.bmAttributes |= USB_CONFIG_ATT_WAKEUP;
 		loopback_driver.descriptors = otg_desc;
@@ -359,6 +392,7 @@ static int zero_bind(struct usb_composite_dev *cdev)
 		usb_add_config_only(cdev, &loopback_driver);
 		usb_add_config_only(cdev, &sourcesink_driver);
 	} else {
+		/* 默认首先添加 sourcesink 驱动作为主要配置 */
 		usb_add_config_only(cdev, &sourcesink_driver);
 		usb_add_config_only(cdev, &loopback_driver);
 	}
@@ -372,6 +406,8 @@ static int zero_bind(struct usb_composite_dev *cdev)
 		goto err_free_otg_desc;
 
 	usb_ep_autoconfig_reset(cdev->gadget);
+
+	/* 复合 usb 重写选项 */
 	usb_composite_overwrite_options(cdev, &coverwrite);
 
 	INFO(cdev, "%s, version: " DRIVER_VERSION "\n", longname);
@@ -415,13 +451,16 @@ static struct usb_composite_driver zero_driver = {
 	.name		= "zero",
 	.dev		= &device_desc,
 	.strings	= dev_strings,
+	/* 最大的 USB 速度 */
 	.max_speed	= USB_SPEED_SUPER,
+	/* 绑定，解绑，抑制和回复函数接口 */
 	.bind		= zero_bind,
 	.unbind		= zero_unbind,
 	.suspend	= zero_suspend,
 	.resume		= zero_resume,
 };
 
+/* 注册 usb 复合驱动 */
 module_usb_composite_driver(zero_driver);
 
 MODULE_AUTHOR("David Brownell");

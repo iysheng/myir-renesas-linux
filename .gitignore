@@ -112,7 +112,9 @@ patches
 series
 
 # cscope files
-cscope.*
+#cscope.*
+cscope.out*
+cscope.*.out
 ncscope.*
 
 # gnu global files

@@ -188,6 +188,7 @@ enum usb_dr_mode of_usb_get_dr_mode_by_phy(struct device_node *np, int arg0)
 	} while (controller);
 
 finish:
+	/* 获取 dr_mode 的值 */
 	err = of_property_read_string(controller, "dr_mode", &dr_mode);
 	of_node_put(controller);
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Renesas USB3.0 Peripheral driver (USB gadget)
+ * 瑞萨的 USB Device 源文件
  *
  * Copyright (C) 2015-2017  Renesas Electronics Corporation
  */
@@ -2911,6 +2912,7 @@ static struct platform_driver renesas_usb3_driver = {
 		.of_match_table = of_match_ptr(usb3_of_match),
 	},
 };
+/* USB device driver 注册 */
 module_platform_driver(renesas_usb3_driver);
 
 MODULE_DESCRIPTION("Renesas USB3.0 Peripheral driver");

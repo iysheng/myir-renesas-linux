@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * serial.c -- USB gadget serial driver
- *
+ * USB gadget 串口驱动
  * Copyright (C) 2003 Al Borchers (alborchers@steinerpoint.com)
  * Copyright (C) 2008 by David Brownell
  * Copyright (C) 2008 by Nokia Corporation
@@ -41,6 +41,7 @@ USB_GADGET_COMPOSITE_OPTIONS();
 
 #define STRING_DESCRIPTION_IDX		USB_GADGET_FIRST_AVAIL_IDX
 
+/* usb 字符串描述符 */
 static struct usb_string strings_dev[] = {
 	[USB_GADGET_MANUFACTURER_IDX].s = "",
 	[USB_GADGET_PRODUCT_IDX].s = GS_VERSION_NAME,
@@ -50,15 +51,20 @@ static struct usb_string strings_dev[] = {
 };
 
 static struct usb_gadget_strings stringtab_dev = {
+	/* 语言 ID */
 	.language	= 0x0409,	/* en-us */
 	.strings	= strings_dev,
 };
 
+/* 字符串描述符 */
 static struct usb_gadget_strings *dev_strings[] = {
 	&stringtab_dev,
 	NULL,
 };
 
+/*
+ * 设备描述符实例
+ * */
 static struct usb_device_descriptor device_desc = {
 	.bLength =		USB_DT_DEVICE_SIZE,
 	.bDescriptorType =	USB_DT_DEVICE,
@@ -72,6 +78,7 @@ static struct usb_device_descriptor device_desc = {
 	.bcdDevice = cpu_to_le16(GS_VERSION_NUM),
 	/* .iManufacturer = DYNAMIC */
 	/* .iProduct = DYNAMIC */
+	/* 包含的配置描述符数量 */
 	.bNumConfigurations =	1,
 };
 
@@ -85,6 +92,7 @@ MODULE_AUTHOR("Al Borchers");
 MODULE_AUTHOR("David Brownell");
 MODULE_LICENSE("GPL");
 
+/* 内核参数，默认使用 acm */
 static bool use_acm = true;
 module_param(use_acm, bool, 0);
 MODULE_PARM_DESC(use_acm, "Use CDC ACM, default=yes");
@@ -128,7 +136,7 @@ static const struct kernel_param_ops enable_ops = {
 module_param_cb(enable, &enable_ops, &enable, 0644);
 
 /*-------------------------------------------------------------------------*/
-
+/* USB 配置 */
 static struct usb_configuration serial_config_driver = {
 	/* .label = f(use_acm) */
 	/* .bConfigurationValue = f(use_acm) */
@@ -261,6 +269,7 @@ static int gs_unbind(struct usb_composite_dev *cdev)
 	return 0;
 }
 
+/* 声明 usb 复合驱动 */
 static struct usb_composite_driver gserial_driver = {
 	.name		= "g_serial",
 	.dev		= &device_desc,
@@ -283,10 +292,12 @@ static int switch_gserial_enable(bool do_enable)
 	return 0;
 }
 
+/* 驱动入口函数 */
 static int __init init(void)
 {
 	/* We *could* export two configs; that'd be much cleaner...
 	 * but neither of these product IDs was defined that way.
+	 * 默认使用的就是 acm 接口配置
 	 */
 	if (use_acm) {
 		serial_config_driver.label = "CDC ACM config";
@@ -312,6 +323,7 @@ static int __init init(void)
 	if (!enable)
 		return 0;
 
+	/* 显式注册这个串口驱动 */
 	return usb_composite_probe(&gserial_driver);
 }
 module_init(init);

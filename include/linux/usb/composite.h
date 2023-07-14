@@ -350,38 +350,54 @@ enum {
 };
 
 /**
+ * 多组配置到一个 gadget
  * struct usb_composite_driver - groups configurations into a gadget
  * @name: For diagnostics, identifies the driver.
+ * 设备描述符号模板，包含默认的设备身份信息
  * @dev: Template descriptor for the device, including default device
  *	identifiers.
+ *	字符串，在 bind 阶段赋值来识别身份以及在控制请求中提供语言ID
  * @strings: tables of strings, keyed by identifiers assigned during @bind
  *	and language IDs provided in control requests. Note: The first entries
  *	are predefined. The first entry that may be used is
  *	USB_GADGET_FIRST_AVAIL_IDX
+ *	最大速度
  * @max_speed: Highest speed the driver supports.
+ * 如果需要用户态提供一个序列号给到这个 gadget, 那么置为1
  * @needs_serial: set to 1 if the gadget needs userspace to provide
  * 	a serial number.  If one is not provided, warning will be printed.
+ * 	必须要，用来分配贯穿整个设备的资源, 比如字符串 ID，以及使用 usb_add_config 
+ * 	函数添加配置,出错时返回负数,成功返回0
  * @bind: (REQUIRED) Used to allocate resources that are shared across the
  *	whole device, such as string IDs, and add its configurations using
  *	@usb_add_config(). This may fail by returning a negative errno
  *	value; it should return zero on successful initialization.
+ *	绑定的反向操作
  * @unbind: Reverses @bind; called as a side effect of unregistering
  *	this driver.
+ *	可选的设备断开方法
  * @disconnect: optional driver disconnect method
+ * 在功能通知后，主机停止发送USB流量时发出通知
  * @suspend: Notifies when the host stops sending USB traffic,
  *	after function notifications
+ * 在功能通知前，主机重新开始发送USB流量时发出通知
  * @resume: Notifies configuration when the host restarts USB traffic,
  *	before function notifications
+ *	控制这个驱动的 gadget 驱动
  * @gadget_driver: Gadget driver controlling this driver
  *
+ * 设备默认上报自己供电的操作。设备依赖 bus 供电的操作应该在它们的 bind 方法中上报。
  * Devices default to reporting self powered operation.  Devices which rely
  * on bus powered operation should report this in their @bind method.
  *
+ * 在从 bind 方法返回之前，模板描述符中的很多域都被重写了。包括厂商id,产品id，
+ * bcdDevice（这是什么）并且这三个字符串（厂家，产品，序列号）通常表示用户有意义的设备
  * Before returning from @bind, various fields in the template descriptor
  * may be overridden.  These include the idVendor/idProduct/bcdDevice values
  * normally to bind the appropriate host side driver, and the three strings
  * (iManufacturer, iProduct, iSerialNumber) normally used to provide user
  * meaningful device identifiers.  (The strings will not be defined unless
+ * 对应的 ep0 的最大包大小也会上报，正如下述控制器驱动定义的那样。
  * they are defined in @dev and @strings.)  The correct ep0 maxpacket size
  * is also reported, as defined by the underlying controller driver.
  */
@@ -586,6 +602,7 @@ struct usb_function_driver {
 	struct usb_function *(*alloc_func)(struct usb_function_instance *inst);
 };
 
+/* usb 接口/功能实例 */
 struct usb_function_instance {
 	struct config_group group;
 	struct list_head cfs_list;
@@ -617,6 +634,7 @@ void usb_remove_function(struct usb_configuration *c, struct usb_function *f);
 	};								\
 	MODULE_ALIAS("usbfunc:"__stringify(_name));
 
+/* 注册 USB 功能的宏  */
 #define DECLARE_USB_FUNCTION_INIT(_name, _inst_alloc, _func_alloc)	\
 	DECLARE_USB_FUNCTION(_name, _inst_alloc, _func_alloc)		\
 	static int __init _name ## mod_init(void)			\

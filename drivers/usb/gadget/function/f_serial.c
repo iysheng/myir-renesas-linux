@@ -389,6 +389,7 @@ static struct usb_function *gser_alloc(struct usb_function_instance *fi)
 	return &gser->port.func;
 }
 
+/* 注册 gadget 串口功能，名字是 gser */
 DECLARE_USB_FUNCTION_INIT(gser, gser_alloc_inst, gser_alloc);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Al Borchers");

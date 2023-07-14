@@ -578,6 +578,7 @@ static const struct of_device_id usbhs_of_match[] = {
 		.data = &usbhs_rza1_plat_info,
 	},
 	{
+		/* 设备树 USB OTG 匹配的是这个 */
 		.compatible = "renesas,rza2-usbhs",
 		.data = &usbhs_rza2_plat_info,
 	},

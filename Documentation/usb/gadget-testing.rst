@@ -2,6 +2,7 @@
 Gadget Testing
 ==============
 
+这个文档总结了gadget 提供的 USB 功能的基本测试信息
 This file summarizes information on basic testing of USB functions
 provided by gadgets.
 
@@ -29,14 +30,19 @@ provided by gadgets.
    20. UAC1 function (new API)
 
 
+1. ACM 功能
 1. ACM function
 ===============
 
+这个功能由 usb_f_acm.ko 模块提供。
 The function is provided by usb_f_acm.ko module.
 
+功能专有的 configfs 接口
 Function-specific configfs interface
 ------------------------------------
 
+当创建这个功能的时候使用的这个功能名字是 acm.ACM功能仅仅在它的功能目录中
+提供了一个属性， port_num, 并且这个属性是只读的。
 The function name to use when creating the function directory is "acm".
 The ACM function provides just one attribute in its function directory:
 
@@ -47,6 +53,7 @@ The attribute is read-only.
 There can be at most 4 ACM/generic serial/OBEX ports in the system.
 
 
+测试 ACM 功能
 Testing the ACM function
 ------------------------
 

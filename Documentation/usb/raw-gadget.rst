@@ -71,6 +71,7 @@ like all USB request processing happen during the lifetime of a syscall),
 and must be kept in the implementation. (This might be slow for real world
 applications, thus the O_NONBLOCK improvement suggestion below.)
 
+将来潜在的提升
 Potential future improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

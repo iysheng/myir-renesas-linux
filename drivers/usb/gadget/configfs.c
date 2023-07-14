@@ -283,6 +283,7 @@ static ssize_t gadget_dev_desc_UDC_store(struct config_item *item,
 			goto err;
 		}
 		gi->composite.gadget_driver.udc_name = name;
+		/* probe usb gadget 驱动 */
 		ret = usb_gadget_probe_driver(&gi->composite.gadget_driver);
 		if (ret) {
 			gi->composite.gadget_driver.udc_name = NULL;
