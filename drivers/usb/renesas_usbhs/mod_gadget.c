@@ -1165,6 +1165,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 		uep->ep.caps.dir_out = true;
 	}
 
+	/* 在这里添加的 usb_gadget， 也就是 usb_udc */
 	ret = usb_add_gadget_udc(dev, &gpriv->gadget);
 	if (ret)
 		goto err_add_udc;

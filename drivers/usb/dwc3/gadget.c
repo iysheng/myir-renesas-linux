@@ -3951,6 +3951,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 	if (ret)
 		goto err4;
 
+	/* 为什么在这里添加了这个 gadget */
 	ret = usb_add_gadget(dwc->gadget);
 	if (ret) {
 		dev_err(dwc->dev, "failed to add gadget\n");

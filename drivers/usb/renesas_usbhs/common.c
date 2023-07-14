@@ -586,6 +586,9 @@ static const struct of_device_id usbhs_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, usbhs_of_match);
 
+/*
+ * usb otg 驱动 probe 入口函数
+ * */
 static int usbhs_probe(struct platform_device *pdev)
 {
 	const struct renesas_usbhs_platform_info *info;
@@ -598,6 +601,9 @@ static int usbhs_probe(struct platform_device *pdev)
 
 	/* check device node */
 	if (dev_of_node(dev))
+		/* 如果是设备树，那么返回匹配的 data 段落
+		 * &usbhs_rza2_plat_info
+		 * */
 		info = of_device_get_match_data(dev);
 	else
 		info = renesas_usbhs_get_info(pdev);
@@ -686,6 +692,7 @@ static int usbhs_probe(struct platform_device *pdev)
 	if (ret < 0)
 		goto probe_end_pipe_exit;
 
+	/* usbhs 模块 probe */
 	ret = usbhs_mod_probe(priv);
 	if (ret < 0)
 		goto probe_end_fifo_exit;

@@ -1197,6 +1197,8 @@ EXPORT_SYMBOL_GPL(usb_initialize_gadget);
 
 /**
  * usb_add_gadget - adds a new gadget to the udc class driver list
+ * 添加一个新的 usb_gadget 到内核，在这里会创建一个新的 usb_udc 内存空间
+ * 到内核的 udc 链表
  * @gadget: the gadget to be added to the list.
  *
  * Returns zero on success, negative errno otherwise.
@@ -1216,6 +1218,9 @@ int usb_add_gadget(struct usb_gadget *gadget)
 	udc->dev.class = udc_class;
 	udc->dev.groups = usb_udc_attr_groups;
 	udc->dev.parent = gadget->dev.parent;
+	/* 在 probe 的过程中，usb_gadget_driver->udc_name
+	 * 是和这个 udc->dev 设备的名字进行匹配
+	 * */
 	ret = dev_set_name(&udc->dev, "%s",
 			kobject_name(&gadget->dev.parent->kobj));
 	if (ret)
@@ -1679,6 +1684,7 @@ static int usb_udc_uevent(struct device *dev, struct kobj_uevent_env *env)
 
 static int __init usb_udc_init(void)
 {
+	/* 这里只是创建一个 udc 类？？？,比如说注册这个 udc 的过程在哪里呢？ */
 	udc_class = class_create(THIS_MODULE, "udc");
 	if (IS_ERR(udc_class)) {
 		pr_err("failed to create udc class --> %ld\n",

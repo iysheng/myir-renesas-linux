@@ -136,6 +136,7 @@ int usbhs_mod_probe(struct usbhs_priv *priv)
 	if (ret < 0)
 		return ret;
 
+	/* probe usb gadget 设备*/
 	ret = usbhs_mod_gadget_probe(priv);
 	if (ret < 0)
 		goto mod_init_host_err;

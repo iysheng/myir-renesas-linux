@@ -1203,6 +1203,7 @@ static int dwc3_core_init_mode(struct dwc3 *dwc)
 	int ret;
 
 	switch (dwc->dr_mode) {
+		/* 如果是外设模式 */
 	case USB_DR_MODE_PERIPHERAL:
 		dwc3_set_prtcap(dwc, DWC3_GCTL_PRTCAP_DEVICE);
 
@@ -1470,6 +1471,9 @@ static void dwc3_check_params(struct dwc3 *dwc)
 	}
 }
 
+/*
+ * dwc3_probe 入口函数
+ * */
 static int dwc3_probe(struct platform_device *pdev)
 {
 	struct device		*dev = &pdev->dev;
