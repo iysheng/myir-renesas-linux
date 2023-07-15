@@ -83,6 +83,7 @@ struct usbhs_priv *usbhs_pdev_to_priv(struct platform_device *pdev)
 	return dev_get_drvdata(&pdev->dev);
 }
 
+/* 返回 usbhs 在 gadget 模式 */
 int usbhs_get_id_as_gadget(struct platform_device *pdev)
 {
 	return USBHS_GADGET;
@@ -364,7 +365,9 @@ static void usbhsc_clk_disable_unprepare(struct usbhs_priv *priv)
  */
 
 /* commonly used on old SH-Mobile SoCs */
+/* rz/2g 好像使用的是这个 */
 static struct renesas_usbhs_driver_pipe_config usbhsc_default_pipe[] = {
+	/* 这里面描述了每一个传输类型的传输数据量大小，以及总的端点数量 */
 	RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_CONTROL, 64, 0x00, false),
 	RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_ISOC, 1024, 0x08, false),
 	RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_ISOC, 1024, 0x18, false),
@@ -602,7 +605,7 @@ static int usbhs_probe(struct platform_device *pdev)
 	/* check device node */
 	if (dev_of_node(dev))
 		/* 如果是设备树，那么返回匹配的 data 段落
-		 * &usbhs_rza2_plat_info
+		 * 针对 rz/g2 芯片返回的是 &usbhs_rza2_plat_info
 		 * */
 		info = of_device_get_match_data(dev);
 	else
@@ -621,15 +624,19 @@ static int usbhs_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	/* usb private data */
+	/* usb private data
+	 * 申请设备私有数据的内存空间
+	 * */
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
+	/* 映射寄存器地址空间 */
 	priv->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(priv->base))
 		return PTR_ERR(priv->base);
 
+	/* 没有这个属性 */
 	if (of_property_read_bool(dev_of_node(dev), "extcon")) {
 		priv->edev = extcon_get_edev_by_phandle(dev, 0);
 		if (IS_ERR(priv->edev))
@@ -646,27 +653,38 @@ static int usbhs_probe(struct platform_device *pdev)
 
 	priv->dparam = info->driver_param;
 
+	/* 这个函数对应的是 usbhs_get_id_as_gadget
+	 * 这个函数就是返回 USBHS_GADGET, 表示工作在 gadget 模式？？？
+	 * */
 	if (!info->platform_callback.get_id) {
 		dev_err(dev, "no platform callbacks\n");
 		return -EINVAL;
 	}
+	/* 关联平台的 callback 函数 */
 	priv->pfunc = &info->platform_callback;
 
 	/* set default param if platform doesn't have */
+	/* 一般地这个都为空 */
 	if (usbhs_get_dparam(priv, has_new_pipe_configs)) {
 		priv->dparam.pipe_configs = usbhsc_new_pipe;
 		priv->dparam.pipe_size = ARRAY_SIZE(usbhsc_new_pipe);
+		/* 所以会进入到这个判断 */
 	} else if (!priv->dparam.pipe_configs) {
 		priv->dparam.pipe_configs = usbhsc_default_pipe;
 		priv->dparam.pipe_size = ARRAY_SIZE(usbhsc_default_pipe);
 	}
+	/* 这里好像是为空 */
 	if (!priv->dparam.pio_dma_border)
 		priv->dparam.pio_dma_border = 64; /* 64byte */
 	if (!of_property_read_u32(dev_of_node(dev), "renesas,buswait", &tmp))
+		/* 设备树默认配置的是 7 */
 		priv->dparam.buswait_bwait = tmp;
+	/* 我从设备树中没有找到这个信息,所以这里返回不会出错么？？？ */
 	gpiod = devm_gpiod_get_optional(dev, "renesas,enable", GPIOD_IN);
+	dev_warn(dev, "RED:USB get optional gpiod begin\n");
 	if (IS_ERR(gpiod))
 		return PTR_ERR(gpiod);
+	dev_warn(dev, "RED:USB get optional gpiod end\n");
 
 	/* FIXME */
 	/* runtime power control ? */
@@ -688,11 +706,12 @@ static int usbhs_probe(struct platform_device *pdev)
 	if (ret < 0)
 		return ret;
 
+	/* fifo probe */
 	ret = usbhs_fifo_probe(priv);
 	if (ret < 0)
 		goto probe_end_pipe_exit;
 
-	/* usbhs 模块 probe */
+	/* usbhs 模块（这个模块中会分别 probe host 和 gadget） probe */
 	ret = usbhs_mod_probe(priv);
 	if (ret < 0)
 		goto probe_end_fifo_exit;

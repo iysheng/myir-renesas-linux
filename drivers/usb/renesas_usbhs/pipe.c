@@ -804,6 +804,7 @@ void usbhs_dcp_dir_for_host(struct usbhs_pipe *pipe, int dir_out)
 /*
  *		pipe module function
  */
+/* 管道模块 probe */
 int usbhs_pipe_probe(struct usbhs_priv *priv)
 {
 	struct usbhs_pipe_info *info = usbhs_priv_to_pipeinfo(priv);
@@ -820,6 +821,7 @@ int usbhs_pipe_probe(struct usbhs_priv *priv)
 		return -EINVAL;
 	}
 
+	/* 根据 pipe_size 申请所需的管道数量 */
 	info->pipe = kcalloc(pipe_size, sizeof(struct usbhs_pipe),
 			     GFP_KERNEL);
 	if (!info->pipe)
@@ -829,6 +831,7 @@ int usbhs_pipe_probe(struct usbhs_priv *priv)
 
 	/*
 	 * init pipe
+	 * 初始化所有的管道
 	 */
 	usbhs_for_each_pipe_with_dcp(pipe, priv, i) {
 		pipe->priv = priv;

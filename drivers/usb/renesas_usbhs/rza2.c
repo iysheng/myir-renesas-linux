@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Renesas USB driver RZ/A2 initialization and power control
+ * RZ/G2 使用的也是这个驱动
  *
  * Copyright (C) 2019 Chris Brandt
  * Copyright (C) 2019 Renesas Electronics Corporation
@@ -64,8 +65,12 @@ const struct renesas_usbhs_platform_info usbhs_rza2_plat_info = {
 		.hardware_init = usbhs_rza2_hardware_init,
 		.hardware_exit = usbhs_rza2_hardware_exit,
 		.power_ctrl = usbhs_rza2_power_ctrl,
+		/* 这个函数好像比较重要，这个函数为空就会中断 probe */
 		.get_id = usbhs_get_id_as_gadget,
 	},
+	/* 驱动相关的参数，在 usbhs_probe 的时候会用这些参数赋值给
+	 * 驱动的私有结构体 struct usbhs_priv
+	 * */
 	.driver_param = {
 		.has_cnen = 1,
 		.cfifo_byte_addr = 1,

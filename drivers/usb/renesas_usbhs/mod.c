@@ -66,6 +66,9 @@ void usbhs_mod_register(struct usbhs_priv *priv, struct usbhs_mod *mod, int id)
 {
 	struct usbhs_mod_info *info = usbhs_priv_to_modinfo(priv);
 
+	/*
+	 * 将自己关联到指定的模式id
+	 * */
 	info->mod[id]	= mod;
 	mod->priv	= priv;
 }
@@ -131,6 +134,8 @@ int usbhs_mod_probe(struct usbhs_priv *priv)
 
 	/*
 	 * install host/gadget driver
+	 * 加载 host/gadget 驱动,为什么要加载 host 驱动呢？？？
+	 * 为什么不直接加载 gadget 驱动呢？？？
 	 */
 	ret = usbhs_mod_host_probe(priv);
 	if (ret < 0)

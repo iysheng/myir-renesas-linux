@@ -1276,6 +1276,9 @@ static int usbhsh_bus_nop(struct usb_hcd *hcd)
 	return 0;
 }
 
+/*
+ * host periph controller driver
+ * */
 static const struct hc_driver usbhsh_driver = {
 	.description =		usbhsh_hcd_name,
 	.hcd_priv_size =	sizeof(struct usbhsh_hpriv),
@@ -1515,6 +1518,12 @@ static int usbhsh_stop(struct usbhs_priv *priv)
 	return 0;
 }
 
+/*
+ * 开启了
+ * defined(CONFIG_USB_RENESAS_USBHS_HCD) || \
+ * defined(CONFIG_USB_RENESAS_USBHS_HCD_MODULE)
+ * 之后，就会执行 host probe
+ * */
 int usbhs_mod_host_probe(struct usbhs_priv *priv)
 {
 	struct usbhsh_hpriv *hpriv;
@@ -1524,6 +1533,9 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 	int i;
 
 	/* initialize hcd */
+	/* 初始化 host controler device
+	 * 创建了一个 struct usb_hcd 实例, 这个 hcd 的名字是 "renesas_usbhs host"
+	 * */
 	hcd = usb_create_hcd(&usbhsh_driver, dev, usbhsh_hcd_name);
 	if (!hcd) {
 		dev_err(dev, "Failed to create hcd\n");
@@ -1543,10 +1555,12 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 
 	/*
 	 * register itself
+	 * 注册自己为 UBSHS_HOST
 	 */
 	usbhs_mod_register(priv, &hpriv->mod, USBHS_HOST);
 
 	/* init hpriv */
+	/* 初始化 host private 相关内容 */
 	hpriv->mod.name		= "host";
 	hpriv->mod.start	= usbhsh_start;
 	hpriv->mod.stop		= usbhsh_stop;

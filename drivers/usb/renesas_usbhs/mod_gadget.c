@@ -1047,6 +1047,9 @@ static int usbhsg_vbus_session(struct usb_gadget *gadget, int is_active)
 	return 0;
 }
 
+/*
+ * udc 相关的驱动接口函数
+ * */
 static const struct usb_gadget_ops usbhsg_gadget_ops = {
 	.get_frame		= usbhsg_get_frame,
 	.set_selfpowered	= usbhsg_set_selfpowered,
@@ -1084,16 +1087,19 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	int i;
 	int ret;
 
+	/* 申请 usbhsg_gpriv 即 gadget 模式的私有数据结构 */
 	gpriv = kzalloc(sizeof(struct usbhsg_gpriv), GFP_KERNEL);
 	if (!gpriv)
 		return -ENOMEM;
 
+	/* 根据 pipe_size 申请对应数量的 struct usbhsg_uep 内存空间 */
 	uep = kcalloc(pipe_size, sizeof(struct usbhsg_uep), GFP_KERNEL);
 	if (!uep) {
 		ret = -ENOMEM;
 		goto usbhs_mod_gadget_probe_err_gpriv;
 	}
 
+	/* 查找 usb 收发器 */
 	gpriv->transceiver = usb_get_phy(USB_PHY_TYPE_UNDEFINED);
 	dev_info(dev, "%stransceiver found\n",
 		 !IS_ERR(gpriv->transceiver) ? "" : "no ");
@@ -1109,6 +1115,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	/*
 	 * register itself
 	 */
+	/* 将自己注册到 gadget 模式这个 id 上 */
 	usbhs_mod_register(priv, &gpriv->mod, USBHS_GADGET);
 
 	/* init gpriv */
@@ -1116,38 +1123,52 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	gpriv->mod.start	= usbhsg_start;
 	gpriv->mod.stop		= usbhsg_stop;
 	gpriv->uep		= uep;
+	/* 在这里确定的 pipe 大小,所以在后续遍历的时候就知道限制了 */
 	gpriv->uep_size		= pipe_size;
+	/* 就是简单设置一下标志位 gpriv->status */
 	usbhsg_status_init(gpriv);
 
 	/*
 	 * init gadget
 	 */
 	gpriv->gadget.dev.parent	= dev;
+	/* 设置 gadget 名字是 renesas_usbhs_udc */
 	gpriv->gadget.name		= "renesas_usbhs_udc";
 	gpriv->gadget.ops		= &usbhsg_gadget_ops;
 	gpriv->gadget.max_speed		= USB_SPEED_HIGH;
 	gpriv->gadget.quirk_avoids_skb_reserve = usbhs_get_dparam(priv,
 								has_usb_dmac);
 
+	/* 初始化这个 gadget 的 ep 链表 */
 	INIT_LIST_HEAD(&gpriv->gadget.ep_list);
 
 	/*
 	 * init usb_ep
+	 * 遍历这个 gadget 上的所有 struct hostsg_uep
+	 * 这是一个数组
 	 */
 	usbhsg_for_each_uep_with_dcp(uep, gpriv, i) {
 		uep->gpriv	= gpriv;
 		uep->pipe	= NULL;
+		/* 设置 ep 的名字 */
 		snprintf(uep->ep_name, EP_NAME_SIZE, "ep%d", i);
 
 		uep->ep.name		= uep->ep_name;
+		/* 关联 ep 的操作符函数集合 */
 		uep->ep.ops		= &usbhsg_ep_ops;
 		INIT_LIST_HEAD(&uep->ep.ep_list);
 		spin_lock_init(&uep->lock);
 
 		/* init DCP */
+			/* 因为前面设置了
+		     * uep->gpriv = gpriv， 所以这里判断如果是第 0 个 ep （也就是控制 ep）
+			 * 那么会走到这里
+			 * */
 		if (usbhsg_is_dcp(uep)) {
+			/* 初始化 gadget 的 ep0, 好像是 控制器 ep ??? */
 			gpriv->gadget.ep0 = &uep->ep;
 			usb_ep_set_maxpacket_limit(&uep->ep, 64);
+			/* 标记这个 ep 是控制端点 */
 			uep->ep.caps.type_control = true;
 		} else {
 			/* init normal pipe */
@@ -1159,13 +1180,16 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 				uep->ep.caps.type_int = true;
 			usb_ep_set_maxpacket_limit(&uep->ep,
 						   pipe_configs[i].bufsize);
+			/* 将这个 ep 添加到 gadget 的 ep_list 链表上 */
 			list_add_tail(&uep->ep.ep_list, &gpriv->gadget.ep_list);
 		}
 		uep->ep.caps.dir_in = true;
 		uep->ep.caps.dir_out = true;
 	}
 
-	/* 在这里添加的 usb_gadget， 也就是 usb_udc */
+	/* 在这里添加的 usb_gadget， 也就是 usb_udc
+	 * 到 dev
+	 * */
 	ret = usb_add_gadget_udc(dev, &gpriv->gadget);
 	if (ret)
 		goto err_add_udc;
