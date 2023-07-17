@@ -1209,12 +1209,14 @@ int usb_add_gadget(struct usb_gadget *gadget)
 	struct usb_udc		*udc;
 	int			ret = -ENOMEM;
 
+	/* 根据 usb_gadget 申请一个 usb_udc 实例 */
 	udc = kzalloc(sizeof(*udc), GFP_KERNEL);
 	if (!udc)
 		goto error;
 
 	device_initialize(&udc->dev);
 	udc->dev.release = usb_udc_release;
+	/* 标记为 udc_class 类 */
 	udc->dev.class = udc_class;
 	udc->dev.groups = usb_udc_attr_groups;
 	udc->dev.parent = gadget->dev.parent;
@@ -1226,6 +1228,7 @@ int usb_add_gadget(struct usb_gadget *gadget)
 	if (ret)
 		goto err_put_udc;
 
+	/* 添加这个设备到内核 */
 	ret = device_add(&gadget->dev);
 	if (ret)
 		goto err_put_udc;
@@ -1234,6 +1237,7 @@ int usb_add_gadget(struct usb_gadget *gadget)
 	gadget->udc = udc;
 
 	mutex_lock(&udc_lock);
+	/* 将这个 udc 添加到全局的 udc_list 链表上 */
 	list_add_tail(&udc->list, &udc_list);
 
 	ret = device_add(&udc->dev);

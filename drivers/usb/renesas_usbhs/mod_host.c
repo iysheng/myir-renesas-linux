@@ -1556,6 +1556,9 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 	/*
 	 * register itself
 	 * 注册自己为 UBSHS_HOST
+	 * 主要就是填充 struct usbhs_mod_info 中 USBHS_HOST 对应的 struct usbhs_mod
+	 * 这个结构体是瑞萨厂商自己的， 核心还是在 gadget 中的  usb_add_gadget_udc 函数
+	 * 注册到了 usb gadget core
 	 */
 	usbhs_mod_register(priv, &hpriv->mod, USBHS_HOST);
 

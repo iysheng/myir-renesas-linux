@@ -1083,6 +1083,9 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	struct device *dev = usbhs_priv_to_dev(priv);
 	struct renesas_usbhs_driver_pipe_config *pipe_configs =
 					usbhs_get_dparam(priv, pipe_configs);
+	/* platform_driver 匹配的时候初始化的 pipe_size，具体大小是定义好的数组长度
+	 * 这个 pipe_size 好像还是比较重要的
+	 * */
 	int pipe_size = usbhs_get_dparam(priv, pipe_size);
 	int i;
 	int ret;
@@ -1172,12 +1175,16 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 			uep->ep.caps.type_control = true;
 		} else {
 			/* init normal pipe */
+			/* 初始化常规的 pipe， 即非控制 pipe
+			 * 可以分为三类：同步传输，批量传输和中断传输
+			 * */
 			if (pipe_configs[i].type == USB_ENDPOINT_XFER_ISOC)
 				uep->ep.caps.type_iso = true;
 			if (pipe_configs[i].type == USB_ENDPOINT_XFER_BULK)
 				uep->ep.caps.type_bulk = true;
 			if (pipe_configs[i].type == USB_ENDPOINT_XFER_INT)
 				uep->ep.caps.type_int = true;
+			/* 设置每一个 pipe 的最大包大小 */
 			usb_ep_set_maxpacket_limit(&uep->ep,
 						   pipe_configs[i].bufsize);
 			/* 将这个 ep 添加到 gadget 的 ep_list 链表上 */
@@ -1188,7 +1195,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	}
 
 	/* 在这里添加的 usb_gadget， 也就是 usb_udc
-	 * 到 dev
+	 * 到 dev， 每一个 dev 对应设备树的一个节点
 	 * */
 	ret = usb_add_gadget_udc(dev, &gpriv->gadget);
 	if (ret)
