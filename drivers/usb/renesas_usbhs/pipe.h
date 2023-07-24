@@ -12,7 +12,7 @@
 #include "fifo.h"
 
 /*
- *	struct
+ *	struct struct_pipe 这个是对瑞萨 usbhs 控制器管道的抽象
  */
 struct usbhs_pipe {
 	u32 pipe_type;	/* USB_ENDPOINT_XFER_xxx */

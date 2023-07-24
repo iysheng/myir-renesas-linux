@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-1.0+
 /*
  * Renesas USB driver
+ * 瑞萨的 USB 驱动入口文件
  *
  * Copyright (C) 2011 Renesas Solutions Corp.
  * Copyright (C) 2019 Renesas Electronics Corporation
@@ -455,6 +456,8 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
 
 	/*
 	 * get id from platform
+	 * 回调的还是对应 struct renesas_usbhs_platform_info 的 platform_callback
+	 * 函数集合
 	 */
 	id = usbhs_platform_call(priv, get_id, pdev);
 
@@ -483,7 +486,9 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
 		usbhsc_set_buswait(priv);
 		usbhsc_bus_init(priv);
 
-		/* module start */
+		/* module start
+		 * 回调 mod 的 start 函数
+		 * */
 		usbhs_mod_call(priv, start, priv);
 
 	} else if (!enable && mod) {
@@ -660,7 +665,7 @@ static int usbhs_probe(struct platform_device *pdev)
 		dev_err(dev, "no platform callbacks\n");
 		return -EINVAL;
 	}
-	/* 关联平台的 callback 函数 */
+	/* 关联平台的 callback 函数集合 */
 	priv->pfunc = &info->platform_callback;
 
 	/* set default param if platform doesn't have */
@@ -670,6 +675,9 @@ static int usbhs_probe(struct platform_device *pdev)
 		priv->dparam.pipe_size = ARRAY_SIZE(usbhsc_new_pipe);
 		/* 所以会进入到这个判断 */
 	} else if (!priv->dparam.pipe_configs) {
+		/* 关联控制其的 pipe 配置，这些 pipe 配置很重要
+		 * 这些和实际的 USB 数据通信有很强的关联
+		 * */
 		priv->dparam.pipe_configs = usbhsc_default_pipe;
 		priv->dparam.pipe_size = ARRAY_SIZE(usbhsc_default_pipe);
 	}
@@ -679,7 +687,9 @@ static int usbhs_probe(struct platform_device *pdev)
 	if (!of_property_read_u32(dev_of_node(dev), "renesas,buswait", &tmp))
 		/* 设备树默认配置的是 7 */
 		priv->dparam.buswait_bwait = tmp;
-	/* 我从设备树中没有找到这个信息,所以这里返回不会出错么？？？ */
+	/* 我从设备树中没有找到这个信息,所以这里返回不会出错么，可能和
+	 * 这个 optional 有关系
+	 * ？？？ */
 	gpiod = devm_gpiod_get_optional(dev, "renesas,enable", GPIOD_IN);
 	dev_warn(dev, "RED:USB get optional gpiod begin\n");
 	if (IS_ERR(gpiod))
@@ -698,20 +708,25 @@ static int usbhs_probe(struct platform_device *pdev)
 	if (irq_res->flags & IORESOURCE_IRQ_SHAREABLE)
 		priv->irqflags = IRQF_SHARED;
 	priv->pdev	= pdev;
+	/* 初始化一个 dlayed 工作挂载到 notify_hotplug_work 工作队列上 */
 	INIT_DELAYED_WORK(&priv->notify_hotplug_work, usbhsc_notify_hotplug);
 	spin_lock_init(usbhs_priv_to_lock(priv));
 
 	/* call pipe and module init */
+	/* probe pipe 管道 probe */
 	ret = usbhs_pipe_probe(priv);
 	if (ret < 0)
 		return ret;
 
 	/* fifo probe */
+	/* 初始化控制器的 fifo，这里有用到 dma */
 	ret = usbhs_fifo_probe(priv);
 	if (ret < 0)
 		goto probe_end_pipe_exit;
 
-	/* usbhs 模块（这个模块中会分别 probe host 和 gadget） probe */
+	/* usbhs 模块（这个模块中会分别 probe host 和 gadget） probe
+	 * 这个函数很重要
+	 * */
 	ret = usbhs_mod_probe(priv);
 	if (ret < 0)
 		goto probe_end_fifo_exit;
@@ -860,6 +875,7 @@ static struct platform_driver renesas_usbhs_driver = {
 	.remove		= usbhs_remove,
 };
 
+/* 瑞萨 USB 驱动入口文件，主要针对的是 OTG */
 module_platform_driver(renesas_usbhs_driver);
 
 MODULE_LICENSE("GPL");

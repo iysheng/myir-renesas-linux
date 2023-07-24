@@ -1466,6 +1466,7 @@ int usbhs_fifo_probe(struct usbhs_priv *priv)
 	fifo->ctr	= CFIFOCTR;
 
 	/* DFIFO */
+	/* 这里的 0，1，2，3指的是传输类型么？  */
 	USBHS_DFIFO_INIT(priv, fifo, 0);
 	USBHS_DFIFO_INIT(priv, fifo, 1);
 	USBHS_DFIFO_INIT_NO_PORT(priv, fifo, 2);

@@ -807,6 +807,7 @@ void usbhs_dcp_dir_for_host(struct usbhs_pipe *pipe, int dir_out)
 /* 管道模块 probe */
 int usbhs_pipe_probe(struct usbhs_priv *priv)
 {
+	/* 从 usbhs_prive 结构体中找到 pipe_info 指针 */
 	struct usbhs_pipe_info *info = usbhs_priv_to_pipeinfo(priv);
 	struct usbhs_pipe *pipe;
 	struct device *dev = usbhs_priv_to_dev(priv);
@@ -815,7 +816,9 @@ int usbhs_pipe_probe(struct usbhs_priv *priv)
 	int pipe_size = usbhs_get_dparam(priv, pipe_size);
 	int i;
 
-	/* This driver expects 1st pipe is DCP */
+	/* This driver expects 1st pipe is DCP
+	 * 第一个期望是控制管道，即控制传输
+	 * */
 	if (pipe_configs[0].type != USB_ENDPOINT_XFER_CONTROL) {
 		dev_err(dev, "1st PIPE is not DCP\n");
 		return -EINVAL;
@@ -834,8 +837,10 @@ int usbhs_pipe_probe(struct usbhs_priv *priv)
 	 * 初始化所有的管道
 	 */
 	usbhs_for_each_pipe_with_dcp(pipe, priv, i) {
+		/* 给每一个管道都关联对应的控制器 */
 		pipe->priv = priv;
 
+		/* 初始化这个管道类型 */
 		usbhs_pipe_type(pipe) =
 			pipe_configs[i].type & USB_ENDPOINT_XFERTYPE_MASK;
 

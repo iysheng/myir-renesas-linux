@@ -1118,7 +1118,9 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	/*
 	 * register itself
 	 */
-	/* 将自己注册到 gadget 模式这个 id 上 */
+	/* 将自己注册到 gadget 模式这个 id 上
+	 * 这个 mod 信息在热插拔的时候会用到！！！
+	 * */
 	usbhs_mod_register(priv, &gpriv->mod, USBHS_GADGET);
 
 	/* init gpriv */

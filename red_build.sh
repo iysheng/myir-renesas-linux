@@ -2,7 +2,7 @@
 
 function do_build
 {
-    make ARCH=arm64 Image dtbs -j2
+    make ARCH=arm64 Image dtbs -j3
 }
 
 function do_menuconfig
@@ -55,7 +55,7 @@ case $1
 	b) do_build;;
 	c) do_menuconfig;;
 	d) do_dtb2dts;;
-	#e) echo "init enviroment"; export PATH=/usr/bin:$PATH; unset LD_LIBRARY_PATH; source ../../03_Tools/Toolchains/sdk/core_red/environment-setup-aarch64-poky-linux;;
+	e) echo "init enviroment"; export PATH=/usr/bin:$PATH; unset LD_LIBRARY_PATH; source ../toolchain/sdk/red_core/environment-setup-aarch64-poky-linux;;
 	g) do_genpatch;;
 	#m) do_mergepatch;;
 	u) do_copy;;

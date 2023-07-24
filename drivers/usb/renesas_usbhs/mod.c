@@ -61,6 +61,8 @@ void usbhs_mod_non_autonomy_mode(struct usbhs_priv *priv)
  * renesas_usbhs host/gadget can register itself by below functions.
  * these functions are called when probe
  *
+ * 注册了指定的 mod 关联对应的 id
+ *
  */
 void usbhs_mod_register(struct usbhs_priv *priv, struct usbhs_mod *mod, int id)
 {
@@ -116,11 +118,13 @@ int usbhs_mod_change(struct usbhs_priv *priv, int id)
 	switch (id) {
 	case USBHS_HOST:
 	case USBHS_GADGET:
+		/* 根据不同的 id，即工作模式，获取对应的 mod 指针 */
 		mod = info->mod[id];
 		break;
 	default:
 		ret = -EINVAL;
 	}
+	/* 更新当前的 mod 指针 */
 	info->curt = mod;
 
 	return ret;
