@@ -814,6 +814,7 @@ static void usbhsg_update_pullup(struct usbhs_priv *priv)
 static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
 {
 	struct usbhsg_gpriv *gpriv = usbhsg_priv_to_gpriv(priv);
+	/* 控制 ep, 第一个 ep 就是控制 ep */
 	struct usbhsg_uep *dcp = usbhsg_gpriv_to_dcp(gpriv);
 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
 	struct device *dev = usbhs_priv_to_dev(priv);
@@ -862,6 +863,7 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
 
 	/*
 	 * enable irq callback
+	 * 使能中断回调
 	 */
 	mod->irq_dev_state	= usbhsg_irq_dev_state;
 	mod->irq_ctrl_stage	= usbhsg_irq_ctrl_stage;
@@ -1049,6 +1051,7 @@ static int usbhsg_vbus_session(struct usb_gadget *gadget, int is_active)
 
 /*
  * udc 相关的驱动接口函数
+ * usb gadget 驱动操作符集合
  * */
 static const struct usb_gadget_ops usbhsg_gadget_ops = {
 	.get_frame		= usbhsg_get_frame,
@@ -1059,6 +1062,7 @@ static const struct usb_gadget_ops usbhsg_gadget_ops = {
 	.vbus_session		= usbhsg_vbus_session,
 };
 
+/* 热插拔的时候会回调这个函数 */
 static int usbhsg_start(struct usbhs_priv *priv)
 {
 	return usbhsg_try_start(priv, USBHSG_STATUS_STARTED);
@@ -1076,6 +1080,9 @@ static int usbhsg_stop(struct usbhs_priv *priv)
 	return usbhsg_try_stop(priv, USBHSG_STATUS_STARTED);
 }
 
+/*
+ * gadget 模式 probe 入口函数
+ * */
 int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 {
 	struct usbhsg_gpriv *gpriv;
@@ -1096,6 +1103,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 		return -ENOMEM;
 
 	/* 根据 pipe_size 申请对应数量的 struct usbhsg_uep 内存空间 */
+	/* 申请所有 usbhsg_uep 内存空间,每一个 ep 都有一个 struct usbhsg_uep 这样的内存空间 */
 	uep = kcalloc(pipe_size, sizeof(struct usbhsg_uep), GFP_KERNEL);
 	if (!uep) {
 		ret = -ENOMEM;
@@ -1103,6 +1111,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	}
 
 	/* 查找 usb 收发器 */
+	/* 获取指定 usb 类型的 phy */
 	gpriv->transceiver = usb_get_phy(USB_PHY_TYPE_UNDEFINED);
 	dev_info(dev, "%stransceiver found\n",
 		 !IS_ERR(gpriv->transceiver) ? "" : "no ");
@@ -1127,6 +1136,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	gpriv->mod.name		= "gadget";
 	gpriv->mod.start	= usbhsg_start;
 	gpriv->mod.stop		= usbhsg_stop;
+	/* 关联 ep, 这个 uep 应该是控制 ep */
 	gpriv->uep		= uep;
 	/* 在这里确定的 pipe 大小,所以在后续遍历的时候就知道限制了 */
 	gpriv->uep_size		= pipe_size;
@@ -1134,7 +1144,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	usbhsg_status_init(gpriv);
 
 	/*
-	 * init gadget
+	 * init gadget 初始化 linux 内核标准的 usb_gadget 结构体实例
 	 */
 	gpriv->gadget.dev.parent	= dev;
 	/* 设置 gadget 名字是 renesas_usbhs_udc */
@@ -1169,9 +1179,11 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 		     * uep->gpriv = gpriv， 所以这里判断如果是第 0 个 ep （也就是控制 ep）
 			 * 那么会走到这里
 			 * */
+		/* init DCP 控制 ep */
 		if (usbhsg_is_dcp(uep)) {
-			/* 初始化 gadget 的 ep0, 好像是 控制器 ep ??? */
+			/* 关联 gadget 的控制端点 */
 			gpriv->gadget.ep0 = &uep->ep;
+			/* 控制端点的包长，最大是 64 */
 			usb_ep_set_maxpacket_limit(&uep->ep, 64);
 			/* 标记这个 ep 是控制端点 */
 			uep->ep.caps.type_control = true;
@@ -1180,6 +1192,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 			/* 初始化常规的 pipe， 即非控制 pipe
 			 * 可以分为三类：同步传输，批量传输和中断传输
 			 * */
+			/* 根据定义初始化相关的类型属性 */
 			if (pipe_configs[i].type == USB_ENDPOINT_XFER_ISOC)
 				uep->ep.caps.type_iso = true;
 			if (pipe_configs[i].type == USB_ENDPOINT_XFER_BULK)
@@ -1199,6 +1212,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	/* 在这里添加的 usb_gadget， 也就是 usb_udc
 	 * 到 dev， 每一个 dev 对应设备树的一个节点
 	 * */
+	/* 添加 usb_gadget 即 udc 到内核 */
 	ret = usb_add_gadget_udc(dev, &gpriv->gadget);
 	if (ret)
 		goto err_add_udc;

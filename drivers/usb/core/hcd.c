@@ -2419,6 +2419,7 @@ struct usb_hcd *__usb_create_hcd(const struct hc_driver *driver,
 {
 	struct usb_hcd *hcd;
 
+	/* 申请 hcd 控制器私有的内存空间,在 hc_driver 中定义了这段私有内存空间的大小 */
 	hcd = kzalloc(sizeof(*hcd) + driver->hcd_priv_size, GFP_KERNEL);
 	if (!hcd)
 		return NULL;

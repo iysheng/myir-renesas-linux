@@ -1279,8 +1279,12 @@ static int usbhsh_bus_nop(struct usb_hcd *hcd)
 /*
  * host periph controller driver
  * */
+/* 瑞萨 host 控制器驱动 */
 static const struct hc_driver usbhsh_driver = {
 	.description =		usbhsh_hcd_name,
+	/* 这里定义了 usbhsh_hpriv 数据结构的大小，在创建 usb_hc 的时候
+	 * 会一起申请这段内存空间
+	 * */
 	.hcd_priv_size =	sizeof(struct usbhsh_hpriv),
 
 	/*
@@ -1526,7 +1530,10 @@ static int usbhsh_stop(struct usbhs_priv *priv)
  * */
 int usbhs_mod_host_probe(struct usbhs_priv *priv)
 {
+	/* 瑞萨私有的数据结构 */
 	struct usbhsh_hpriv *hpriv;
+
+	/* linux 标准的 usb hcd 结构体实例 */
 	struct usb_hcd *hcd;
 	struct usbhsh_device *udev;
 	struct device *dev = usbhs_priv_to_dev(priv);
@@ -1551,6 +1558,8 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 	 * The accesse will be enable after "usbhsh_start"
 	 */
 
+	/* hpriv 这段内存空间在 usb_create_hcd 创建 hcd 的时候
+	 * 根据 hc_driver 的 hcd_priv_size 大小申请的 */
 	hpriv = usbhsh_hcd_to_hpriv(hcd);
 
 	/*
@@ -1560,10 +1569,15 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 	 * 这个结构体是瑞萨厂商自己的， 核心还是在 gadget 中的  usb_add_gadget_udc 函数
 	 * 注册到了 usb gadget core
 	 */
-	usbhs_mod_register(priv, &hpriv->mod, USBHS_HOST);
-
 	/* init hpriv */
 	/* 初始化 host private 相关内容 */
+	 * 将自己注册到
+	 */
+	usbhs_mod_register(priv, &hpriv->mod, USBHS_HOST);
+
+	/* init hpriv
+	 * 表示这个 mod 是 host
+	 * */
 	hpriv->mod.name		= "host";
 	hpriv->mod.start	= usbhsh_start;
 	hpriv->mod.stop		= usbhsh_stop;

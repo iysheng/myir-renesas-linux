@@ -382,6 +382,7 @@ static struct renesas_usbhs_driver_pipe_config usbhsc_default_pipe[] = {
 };
 
 /* commonly used on newer SH-Mobile and R-Car SoCs */
+/* rza2 对应是这个 */
 static struct renesas_usbhs_driver_pipe_config usbhsc_new_pipe[] = {
 	RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_CONTROL, 64, 0x00, false),
 	RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_ISOC, 1024, 0x08, true),
@@ -439,10 +440,12 @@ static void usbhsc_power_ctrl(struct usbhs_priv *priv, int enable)
 
 /*
  *		hotplug
+ *		usb hsc 热插拔处理函数入口
  */
 static void usbhsc_hotplug(struct usbhs_priv *priv)
 {
 	struct platform_device *pdev = usbhs_priv_to_pdev(priv);
+	/* 刚开始未启动，即未接入 OTG 的时候当前的的 mod 是为空 */
 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
 	int id;
 	int enable;
@@ -456,11 +459,16 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
 
 	/*
 	 * get id from platform
+<<<<<<< HEAD
 	 * 回调的还是对应 struct renesas_usbhs_platform_info 的 platform_callback
 	 * 函数集合
+=======
+	 * 因为针对 rz/g2 这个 get_id 是强制 gadget 模式, 所以只有 gadget 模式
+>>>>>>> 69a563af2e8f ([ADD][CHG][N/T] 1. 添加反编译的设备树文件 2. 更新 usb 相关的代码注释)
 	 */
 	id = usbhs_platform_call(priv, get_id, pdev);
 
+	/* 刚启动的时候，mod 是为空,所以如果是 usb 接入启动 */
 	if (enable && !mod) {
 		if (priv->edev) {
 			cable = extcon_get_state(priv->edev, EXTCON_USB_HOST);
@@ -486,9 +494,14 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
 		usbhsc_set_buswait(priv);
 		usbhsc_bus_init(priv);
 
+<<<<<<< HEAD
 		/* module start
 		 * 回调 mod 的 start 函数
 		 * */
+=======
+		/* module start */
+		/* 回调 mod 的 start 函数 */
+>>>>>>> 69a563af2e8f ([ADD][CHG][N/T] 1. 添加反编译的设备树文件 2. 更新 usb 相关的代码注释)
 		usbhs_mod_call(priv, start, priv);
 
 	} else if (!enable && mod) {
@@ -513,6 +526,8 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
 
 /*
  *		notify hotplug
+ *
+ *		热插拔处理函数
  */
 static void usbhsc_notify_hotplug(struct work_struct *work)
 {
@@ -669,8 +684,9 @@ static int usbhs_probe(struct platform_device *pdev)
 	priv->pfunc = &info->platform_callback;
 
 	/* set default param if platform doesn't have */
-	/* 一般地这个都为空 */
+	/* rza2.c 中 has_new_pipe_configs 为 1，所以会走这里 */
 	if (usbhs_get_dparam(priv, has_new_pipe_configs)) {
+		/* 从 usbhsc_new_pipe 数组中获取 pipe_size 大小 */
 		priv->dparam.pipe_configs = usbhsc_new_pipe;
 		priv->dparam.pipe_size = ARRAY_SIZE(usbhsc_new_pipe);
 		/* 所以会进入到这个判断 */
@@ -871,6 +887,7 @@ static struct platform_driver renesas_usbhs_driver = {
 		.pm	= &usbhsc_pm_ops,
 		.of_match_table = of_match_ptr(usbhs_of_match),
 	},
+	/* usbhs probe 入口函数，对应的是 usb ch0 (OTG-Func) */
 	.probe		= usbhs_probe,
 	.remove		= usbhs_remove,
 };

@@ -247,6 +247,8 @@ struct usbhs_priv;
 
 /*
  *		struct
+ *
+ *		usbhs_priv  usbhs 的私有数据结构,这个结构体是 probe 的核心
  */
 struct usbhs_priv {
 

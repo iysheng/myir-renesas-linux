@@ -1183,6 +1183,7 @@ void usb_initialize_gadget(struct device *parent, struct usb_gadget *gadget,
 		void (*release)(struct device *dev))
 {
 	dev_set_name(&gadget->dev, "gadget");
+	/* 初始化这个 dadget 的工作者队列 */
 	INIT_WORK(&gadget->work, usb_gadget_state_work);
 	gadget->dev.parent = parent;
 

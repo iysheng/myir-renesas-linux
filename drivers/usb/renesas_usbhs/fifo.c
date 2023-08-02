@@ -967,6 +967,7 @@ static int usbhsf_dma_push_done(struct usbhs_pkt *pkt, int *is_done)
 	return 0;
 }
 
+/* 写数据有关的结构体 */
 const struct usbhs_pkt_handle usbhs_fifo_dma_push_handler = {
 	.prepare	= usbhsf_dma_prepare_push,
 	.dma_done	= usbhsf_dma_push_done,
@@ -1053,6 +1054,7 @@ static int usbhsf_dma_prepare_pop(struct usbhs_pkt *pkt, int *is_done)
 	if (usbhs_get_dparam(priv, has_usb_dmac))
 		return usbhsf_dma_prepare_pop_with_usb_dmac(pkt, is_done);
 	else
+		/* 会走到这里 */
 		return usbhsf_dma_prepare_pop_with_rx_irq(pkt, is_done);
 }
 
@@ -1217,6 +1219,7 @@ static int usbhsf_dma_pop_done(struct usbhs_pkt *pkt, int *is_done)
 		return usbhsf_dma_pop_done_with_rx_irq(pkt, is_done);
 }
 
+/* 读数据有关的结构体 */
 const struct usbhs_pkt_handle usbhs_fifo_dma_pop_handler = {
 	.prepare	= usbhsf_dma_prepare_pop,
 	.try_run	= usbhsf_dma_try_pop,

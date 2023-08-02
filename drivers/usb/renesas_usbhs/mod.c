@@ -42,6 +42,7 @@ void usbhs_mod_autonomy_mode(struct usbhs_priv *priv)
 {
 	struct usbhs_mod_info *info = usbhs_priv_to_modinfo(priv);
 
+	/* 初始化 mod_info 的成员函数 */
 	info->irq_vbus = usbhsm_autonomy_irq_vbus;
 	info->get_vbus = usbhsm_autonomy_get_vbus;
 
@@ -71,8 +72,8 @@ void usbhs_mod_register(struct usbhs_priv *priv, struct usbhs_mod *mod, int id)
 	/*
 	 * 将自己关联到指定的模式id
 	 * */
-	info->mod[id]	= mod;
-	mod->priv	= priv;
+	info->mod[id] = mod;
+	mod->priv     = priv;
 }
 
 struct usbhs_mod *usbhs_mod_get(struct usbhs_priv *priv, int id)
@@ -131,6 +132,9 @@ int usbhs_mod_change(struct usbhs_priv *priv, int id)
 }
 
 static irqreturn_t usbhs_interrupt(int irq, void *data);
+/* 这个 mod probe 过程中，为什么既要 probe host 又要 probe gadget 呢?
+ * 为什么不直接 probe gadget 呢？
+ * */
 int usbhs_mod_probe(struct usbhs_priv *priv)
 {
 	struct device *dev = usbhs_priv_to_dev(priv);
@@ -140,17 +144,22 @@ int usbhs_mod_probe(struct usbhs_priv *priv)
 	 * install host/gadget driver
 	 * 加载 host/gadget 驱动,为什么要加载 host 驱动呢？？？
 	 * 为什么不直接加载 gadget 驱动呢？？？
+	 * 在这里注册了一个 linux 标准的 hcd
 	 */
 	ret = usbhs_mod_host_probe(priv);
 	if (ret < 0)
 		return ret;
 
 	/* probe usb gadget 设备*/
+	/*
+	 * gadget 相关的 probe 操作
+	 * */
 	ret = usbhs_mod_gadget_probe(priv);
 	if (ret < 0)
 		goto mod_init_host_err;
 
 	/* irq settings */
+	/* 申请 irq 中断 */
 	ret = devm_request_irq(dev, priv->irq, usbhs_interrupt,
 			  priv->irqflags, dev_name(dev), priv);
 	if (ret) {
@@ -249,6 +258,7 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
  */
 #define INTSTS0_MAGIC 0xF800 /* acknowledge magical interrupt sources */
 #define INTSTS1_MAGIC 0xA870 /* acknowledge magical interrupt sources */
+/* usbhs 的中断入口函数 */
 static irqreturn_t usbhs_interrupt(int irq, void *data)
 {
 	struct usbhs_priv *priv = data;
@@ -269,6 +279,7 @@ static irqreturn_t usbhs_interrupt(int irq, void *data)
 	 *	   - Function :: VALID bit should 0
 	 */
 	usbhs_write(priv, INTSTS0, ~irq_state.intsts0 & INTSTS0_MAGIC);
+	/* 如果是 host 模式 */
 	if (usbhs_mod_is_host(priv))
 		usbhs_write(priv, INTSTS1, ~irq_state.intsts1 & INTSTS1_MAGIC);
 

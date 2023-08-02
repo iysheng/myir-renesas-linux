@@ -66,6 +66,7 @@ const struct renesas_usbhs_platform_info usbhs_rza2_plat_info = {
 		.hardware_exit = usbhs_rza2_hardware_exit,
 		.power_ctrl = usbhs_rza2_power_ctrl,
 		/* 这个函数好像比较重要，这个函数为空就会中断 probe */
+		/* 强制是 gadget 模式 */
 		.get_id = usbhs_get_id_as_gadget,
 	},
 	/* 驱动相关的参数，在 usbhs_probe 的时候会用这些参数赋值给
