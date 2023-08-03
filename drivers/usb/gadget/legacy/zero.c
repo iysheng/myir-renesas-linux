@@ -120,7 +120,7 @@ static struct usb_device_descriptor device_desc = {
 
 	.idVendor =		cpu_to_le16(DRIVER_VENDOR_NUM),
 	.idProduct =		cpu_to_le16(DRIVER_PRODUCT_NUM),
-	.bNumConfigurations =	2,
+	.bNumConfigurations =	2, /* 表示有两个配置描述符 */
 };
 
 static const struct usb_descriptor_header *otg_desc[2];
@@ -206,6 +206,9 @@ static void zero_resume(struct usb_composite_dev *cdev)
 
 /*-------------------------------------------------------------------------*/
 
+/*
+ * 这是 zero gadget 支持的两种配置的另一种
+ * */
 static struct usb_configuration loopback_driver = {
 	.label          = "loopback",
 	.bConfigurationValue = 2,
@@ -229,7 +232,9 @@ static int ss_config_setup(struct usb_configuration *c,
 	}
 }
 
-/* 关联 usb 配置描述符,这个确实是配置描述符 */
+/* 关联 usb 配置描述符,这个确实是配置描述符
+ * zero gadget 一共支持两种配置，这是其中一种配置
+ * */
 static struct usb_configuration sourcesink_driver = {
 	.label                  = "source/sink",
 	.setup                  = ss_config_setup,
@@ -393,6 +398,7 @@ static int zero_bind(struct usb_composite_dev *cdev)
 		usb_add_config_only(cdev, &sourcesink_driver);
 	} else {
 		/* 默认首先添加 sourcesink 驱动作为主要配置 */
+		/* 所以在 gadget 枚举的时候是会首先枚举 sourcesink_driver 这种模式了？ */
 		usb_add_config_only(cdev, &sourcesink_driver);
 		usb_add_config_only(cdev, &loopback_driver);
 	}

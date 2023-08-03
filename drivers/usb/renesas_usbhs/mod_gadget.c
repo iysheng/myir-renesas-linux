@@ -1052,6 +1052,7 @@ static int usbhsg_vbus_session(struct usb_gadget *gadget, int is_active)
 /*
  * udc 相关的驱动接口函数
  * usb gadget 驱动操作符集合
+ * 这些函数应该是和 linux 内核 gadget 通信的核心结构体
  * */
 static const struct usb_gadget_ops usbhsg_gadget_ops = {
 	.get_frame		= usbhsg_get_frame,

@@ -459,12 +459,9 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
 
 	/*
 	 * get id from platform
-<<<<<<< HEAD
 	 * 回调的还是对应 struct renesas_usbhs_platform_info 的 platform_callback
 	 * 函数集合
-=======
 	 * 因为针对 rz/g2 这个 get_id 是强制 gadget 模式, 所以只有 gadget 模式
->>>>>>> 69a563af2e8f ([ADD][CHG][N/T] 1. 添加反编译的设备树文件 2. 更新 usb 相关的代码注释)
 	 */
 	id = usbhs_platform_call(priv, get_id, pdev);
 
@@ -494,14 +491,9 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
 		usbhsc_set_buswait(priv);
 		usbhsc_bus_init(priv);
 
-<<<<<<< HEAD
 		/* module start
 		 * 回调 mod 的 start 函数
 		 * */
-=======
-		/* module start */
-		/* 回调 mod 的 start 函数 */
->>>>>>> 69a563af2e8f ([ADD][CHG][N/T] 1. 添加反编译的设备树文件 2. 更新 usb 相关的代码注释)
 		usbhs_mod_call(priv, start, priv);
 
 	} else if (!enable && mod) {
