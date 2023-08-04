@@ -1542,6 +1542,7 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 	/* initialize hcd */
 	/* 初始化 host controler device
 	 * 创建了一个 struct usb_hcd 实例, 这个 hcd 的名字是 "renesas_usbhs host"
+	 * 为什么要创建这个 hcd 呢？为什么不直接创建 dcd 呢
 	 * */
 	hcd = usb_create_hcd(&usbhsh_driver, dev, usbhsh_hcd_name);
 	if (!hcd) {
@@ -1560,6 +1561,7 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 
 	/* hpriv 这段内存空间在 usb_create_hcd 创建 hcd 的时候
 	 * 根据 hc_driver 的 hcd_priv_size 大小申请的 */
+	/* 将 usbhcd 的私有内存转换为获取瑞萨私有的 struct usbhs_priv 指针 */
 	hpriv = usbhsh_hcd_to_hpriv(hcd);
 
 	/*
@@ -1568,6 +1570,7 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 	 * 主要就是填充 struct usbhs_mod_info 中 USBHS_HOST 对应的 struct usbhs_mod
 	 * 这个结构体是瑞萨厂商自己的， 核心还是在 gadget 中的  usb_add_gadget_udc 函数
 	 * 注册到了 usb gadget core
+	 * 还是进一步初始化了 struct usbhs_priv 这个结构体实例
 	 */
 	/* init hpriv */
 	/* 初始化 host private 相关内容 */
@@ -1584,6 +1587,7 @@ int usbhs_mod_host_probe(struct usbhs_priv *priv)
 	usbhsh_port_stat_init(hpriv);
 
 	/* init all device */
+	/* 初始化所有 udev 的 ep list */
 	usbhsh_for_each_udev_with_dev0(udev, hpriv, i) {
 		udev->usbv	= NULL;
 		INIT_LIST_HEAD(&udev->ep_list_head);

@@ -186,7 +186,10 @@ struct renesas_usbhs_driver_param {
  * option:
  *
  * platform information for renesas_usbhs driver.
- */
+ */ 
+/* 这个结构体的内容会放到 struct usbhs_priv 结构体中
+ * 而 struct usbhs_priv 结构体是 usbhs_mod_probe 的核心实例
+ * */
 struct renesas_usbhs_platform_info {
 	/*
 	 * option:

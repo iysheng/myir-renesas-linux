@@ -1153,6 +1153,7 @@
 			power-domains = <0x04>;
 			status = "okay";
 			memory-region = <0x2d>;
+			/* 表示工作模式， host, otg, peripheral */
 			dr_mode = "otg";
 			phandle = <0x30>;
 
