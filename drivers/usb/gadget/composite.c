@@ -932,7 +932,8 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 	struct usb_configuration *c;
 
 	/*
-	 * 如果为 0 可以认为是这个配置无效
+	 * 如果为 0 可以认为是这个配置无效,这个数值表示这个配置的编号,如果是0
+	 * 表示这个配置无效
 	 * */
 	if (!config->bConfigurationValue)
 		return -EINVAL;
@@ -940,6 +941,9 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 	/* Prevent duplicate configuration identifiers */
 	/* 遍历这个设备的所有配置,避免这个设备重复添加 */
 	list_for_each_entry(c, &cdev->configs, list) {
+		/* 如果这个设备上已经添加了这个 bConfigurationValue 的配置描述符，那么
+		 * 返回 busy
+		 * */
 		if (c->bConfigurationValue == config->bConfigurationValue)
 			return -EBUSY;
 	}
@@ -949,6 +953,7 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 	list_add_tail(&config->list, &cdev->configs);
 
 	INIT_LIST_HEAD(&config->functions);
+	/* 清空配置描述符的接口描述符信息 */
 	config->next_interface_id = 0;
 	memset(config->interface, 0, sizeof(config->interface));
 

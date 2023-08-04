@@ -57,12 +57,13 @@ static inline struct f_sourcesink *func_to_ss(struct usb_function *f)
 
 /*-------------------------------------------------------------------------*/
 
+/* 确实是接口描述符 */
 static struct usb_interface_descriptor source_sink_intf_alt0 = {
 	.bLength =		USB_DT_INTERFACE_SIZE,
 	.bDescriptorType =	USB_DT_INTERFACE,
 
 	.bAlternateSetting =	0,
-	.bNumEndpoints =	2,
+	.bNumEndpoints =	2, /* 端点数量 */
 	.bInterfaceClass =	USB_CLASS_VENDOR_SPEC,
 	/* .iInterface		= DYNAMIC */
 };
@@ -72,7 +73,7 @@ static struct usb_interface_descriptor source_sink_intf_alt1 = {
 	.bDescriptorType =	USB_DT_INTERFACE,
 
 	.bAlternateSetting =	1,
-	.bNumEndpoints =	4,
+	.bNumEndpoints =	4, /* 这个接口描述符对应的端点数量 */
 	.bInterfaceClass =	USB_CLASS_VENDOR_SPEC,
 	/* .iInterface		= DYNAMIC */
 };
@@ -833,6 +834,7 @@ unknown:
 
 /*
  * 申请 usb function (感觉这个是配置描述符的等级)的函数接口
+ * usb_function 和 usb_function_instance 是什么关系呢
  * */
 static struct usb_function *source_sink_alloc_func(
 		struct usb_function_instance *fi)
@@ -851,6 +853,7 @@ static struct usb_function *source_sink_alloc_func(
 	ss_opts->refcnt++;
 	mutex_unlock(&ss_opts->lock);
 
+	/* 使用 f_ss_opts 初始化 ss 相关的配置 */
 	ss->pattern = ss_opts->pattern;
 	ss->isoc_interval = ss_opts->isoc_interval;
 	ss->isoc_maxpacket = ss_opts->isoc_maxpacket;

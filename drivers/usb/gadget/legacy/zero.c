@@ -402,6 +402,10 @@ static int zero_bind(struct usb_composite_dev *cdev)
 		usb_add_config_only(cdev, &sourcesink_driver);
 		usb_add_config_only(cdev, &loopback_driver);
 	}
+
+	/*
+	 * 给配置描述符添加功能(这个功能是不是接口描述符的集合呢)
+	 * */
 	status = usb_add_function(&sourcesink_driver, func_ss);
 	if (status)
 		goto err_free_otg_desc;
