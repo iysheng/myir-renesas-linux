@@ -232,7 +232,8 @@ static int ss_config_setup(struct usb_configuration *c,
 	}
 }
 
-/* 关联 usb 配置描述符,这个确实是配置描述符
+/* 
+ * 关联 usb 配置描述符,这个确实是配置描述符
  * zero gadget 一共支持两种配置，这是其中一种配置
  * */
 static struct usb_configuration sourcesink_driver = {
@@ -263,6 +264,9 @@ module_param_named(isoc_maxburst, gzero_options.isoc_maxburst, uint,
 MODULE_PARM_DESC(isoc_maxburst, "0 - 15 (ss only)");
 
 static struct usb_function *func_lb;
+/*
+ * loopback 配置的 instance 实例指针
+ * */
 static struct usb_function_instance *func_inst_lb;
 
 module_param_named(qlen, gzero_options.qlen, uint, S_IRUGO|S_IWUSR);
@@ -326,17 +330,26 @@ static int zero_bind(struct usb_composite_dev *cdev)
 		goto err_put_func_inst_ss;
 	}
 
-	/* 获取 loopback 相关的功能 */
+	/* 获取 loopback 相关的功能实例指针 */
 	func_inst_lb = usb_get_function_instance("Loopback");
 	if (IS_ERR(func_inst_lb)) {
 		status = PTR_ERR(func_inst_lb);
 		goto err_put_func_ss;
 	}
 
+	/* 根据 usb_function_instance 获取 loopback 上层的结构体指针 */
 	lb_opts = container_of(func_inst_lb, struct f_lb_opts, func_inst);
+	/* 初始化 loopback 相关的私有数据
+	 * 在这里是对这些数据重新修正，因为在函数 loopback_alloc_instance 函数
+	 * 中会对这两个参数初始化一个默认数值
+	 * */
 	lb_opts->bulk_buflen = gzero_options.bulk_buflen;
 	lb_opts->qlen = gzero_options.qlen;
 
+	/* 检查 struct usb_function 指针是否有效
+	 * 在 usb_get_function 函数中会申请 usb_function 结构体内存空间，回调的
+	 * 是 usb_function_driver 的 alloc_func 函数
+	 * */
 	func_lb = usb_get_function(func_inst_lb);
 	if (IS_ERR(func_lb)) {
 		status = PTR_ERR(func_lb);
@@ -345,7 +358,7 @@ static int zero_bind(struct usb_composite_dev *cdev)
 
 	/* 赋值 sourcesink 和 loopback 接口相关的字符串id 索引
 	 * 在 usb_add_config_only 的过程中会检查这个 iConfiguration 如果为0，
-	 * 表示无效，会返回出错
+	 * 表示无效(看<<圈圈教你玩 USB 资料>>，表示没有字符串)，会返回出错
 	 * */
 	sourcesink_driver.iConfiguration = strings_dev[USB_GZERO_SS_DESC].id;
 	loopback_driver.iConfiguration = strings_dev[USB_GZERO_LB_DESC].id;
@@ -368,22 +381,25 @@ static int zero_bind(struct usb_composite_dev *cdev)
 	 * 如果是 otg 系统，
 	 * */
 	if (gadget_is_otg(cdev->gadget)) {
+		/* 如果 otg_desc 对应的为空，默认就是空 */
 		if (!otg_desc[0]) {
 			struct usb_descriptor_header *usb_desc;
 
-			/* 申请一个 otg 描述符空间 */
+			/* 申请一个 otg 描述符空间
+			 * 具体来说是申请一个 otg 类型的 usb 配置描述符空间
+			 * */
 			usb_desc = usb_otg_descriptor_alloc(cdev->gadget);
 			if (!usb_desc) {
 				status = -ENOMEM;
 				goto err_conf_flb;
 			}
-			/* otg 描述符初始化 */
+			/* otg 配置描述符初始化 */
 			usb_otg_descriptor_init(cdev->gadget, usb_desc);
-			/* 关联 otg 描述符 */
+			/* 关联 otg 描述符指针 */
 			otg_desc[0] = usb_desc;
 			otg_desc[1] = NULL;
 		}
-		/* 关联对应的描述符到对应的接口，表示这是一个 otg 设备 */
+		/* 关联对应的描述符到对应的 usb_configuration，表示这是一个 otg 设备 */
 		sourcesink_driver.descriptors = otg_desc;
 		sourcesink_driver.bmAttributes |= USB_CONFIG_ATT_WAKEUP;
 		loopback_driver.descriptors = otg_desc;

@@ -302,6 +302,7 @@ int config_ep_by_speed(struct usb_gadget *g, struct usb_function *f,
 struct usb_configuration {
 	const char			*label;
 	struct usb_gadget_strings	**strings;
+	/* 该描述符的长度和类型,这是 usb 配置描述符的头部!!! */
 	const struct usb_descriptor_header **descriptors;
 
 	/* REVISIT:  bind() functions can be marked __init, which

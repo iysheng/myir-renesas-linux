@@ -31,7 +31,11 @@ static struct usb_function_instance *try_get_usb_function_instance(const char *n
 		if (IS_ERR(fi))
 			module_put(fd->mod);
 		else
-			/* 因为 fi 是刚申请的内存空间，在这里关联这个 fd 到 fi->fd */
+			/* 因为 fi 是刚申请的内存空间，在这里关联这个 fd 到 fi->fd
+			 * 关联这个 function_driver 到指定的申请出来的 usb_function_instance
+			 * 在这之前只是注册了 function_driver, 但是并没有 
+			 * instance
+			 * */
 			fi->fd = fd;
 		break;
 	}
@@ -63,6 +67,7 @@ struct usb_function *usb_get_function(struct usb_function_instance *fi)
 {
 	struct usb_function *f;
 
+	/* 在这里申请一个 usb_function 实例 */
 	f = fi->fd->alloc_func(fi);
 	if (IS_ERR(f))
 		return f;
@@ -109,6 +114,7 @@ int usb_function_register(struct usb_function_driver *newf)
 			goto out;
 	}
 	ret = 0;
+	/* 添加到功能链表上 */
 	list_add_tail(&newf->list, &func_list);
 out:
 	mutex_unlock(&func_lock);

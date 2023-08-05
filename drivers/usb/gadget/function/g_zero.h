@@ -47,6 +47,10 @@ struct f_ss_opts {
 	int				refcnt;
 };
 
+/* 这个结构体是 loopback function ~最~顶层的结构体
+ * 下辖 usb_function_instance
+ * 			usb_function_driver
+ * */
 struct f_lb_opts {
 	struct usb_function_instance func_inst;
 	unsigned bulk_buflen;

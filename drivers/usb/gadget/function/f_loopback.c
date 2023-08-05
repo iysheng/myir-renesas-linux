@@ -25,6 +25,9 @@
  * them back so they can be read IN from it.  It has been used by certain
  * test applications.  It supports limited testing of data queueing logic.
  */
+/* 这个结构体是 usb_function 上一层的结构体和它对应的是
+ * struct f_lb_opts 结构体是 struct usb_function_instance 结构体上一层的结构体
+ * */
 struct f_loopback {
 	struct usb_function	function;
 
@@ -442,7 +445,9 @@ static struct usb_function *loopback_alloc(struct usb_function_instance *fi)
 	if (!loop->qlen)
 		loop->qlen = 32;
 
+	/* 初始化 usb_function 结构体 */
 	loop->function.name = "loopback";
+	/* 这个 loopback_bind 函数可能比较重要 */
 	loop->function.bind = loopback_bind;
 	loop->function.set_alt = loopback_set_alt;
 	loop->function.disable = loopback_disable;
@@ -566,6 +571,11 @@ static void lb_free_instance(struct usb_function_instance *fi)
 	kfree(lb_opts);
 }
 
+/*
+ * 通过函数 usb_get_function_instance
+ * 或者 try_get_usb_function_instance 获取功能实例的时候，会首先
+ * 回调这个 usb_function 的 alloc_inst 成员函数
+ * */
 static struct usb_function_instance *loopback_alloc_instance(void)
 {
 	struct f_lb_opts *lb_opts;

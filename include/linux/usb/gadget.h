@@ -417,6 +417,7 @@ struct usb_gadget {
 	struct usb_otg_caps		*otg_caps;
 
 	unsigned			sg_supported:1;
+	/* 指示是否是 usb otg 设备，1表示是，0表示不是 */
 	unsigned			is_otg:1;
 	unsigned			is_a_peripheral:1;
 	unsigned			b_hnp_enable:1;

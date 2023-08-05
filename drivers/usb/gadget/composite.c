@@ -309,7 +309,9 @@ int usb_add_function(struct usb_configuration *config,
 	if (!function->set_alt || !function->disable)
 		goto done;
 
+	/* 关联这个 usb function 对应的配置 */
 	function->config = config;
+	/* 将这个 usb_function 添加到 usb_configuration 的功能链表上 */
 	list_add_tail(&function->list, &config->functions);
 
 	if (function->bind_deactivated) {
@@ -319,6 +321,7 @@ int usb_add_function(struct usb_configuration *config,
 	}
 
 	/* REVISIT *require* function->bind? */
+	/* 在这里执行这个 usb_function 的 bind 函数*/
 	if (function->bind) {
 		value = function->bind(config, function);
 		if (value < 0) {
@@ -932,7 +935,8 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 	struct usb_configuration *c;
 
 	/*
-	 * 如果为 0 可以认为是这个配置无效,这个数值表示这个配置的编号,如果是0
+	 * 如果为 0 (根据标准 usb 规范的定义实际表示这个配置没有对应的字符串描述符索引)
+	 * 可以认为是这个配置无效,这个数值表示这个配置的编号,如果是0
 	 * 表示这个配置无效
 	 * */
 	if (!config->bConfigurationValue)
@@ -942,12 +946,13 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 	/* 遍历这个设备的所有配置,避免这个设备重复添加 */
 	list_for_each_entry(c, &cdev->configs, list) {
 		/* 如果这个设备上已经添加了这个 bConfigurationValue 的配置描述符，那么
-		 * 返回 busy
+		 * 返回 busy, 避免重复添加
 		 * */
 		if (c->bConfigurationValue == config->bConfigurationValue)
 			return -EBUSY;
 	}
 
+	/* 关联这个配置描述符对应的设备 */
 	config->cdev = cdev;
 	/* 将这个配置添加到 cdev 设备的配置链表（这里更坚定了我认为这个是 usb 设备的配置描述符）上 */
 	list_add_tail(&config->list, &cdev->configs);
