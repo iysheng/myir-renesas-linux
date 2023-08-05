@@ -1166,7 +1166,9 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	usbhsg_for_each_uep_with_dcp(uep, gpriv, i) {
 		uep->gpriv	= gpriv;
 		uep->pipe	= NULL;
-		/* 设置 ep 的名字 */
+		/* 设置 ep 的名字，在 usb_function bind 的时候会使用到这个 ep 名字，具体是在
+		 * 函数 usb_ep_autoconfig 的过程中
+		 * */
 		snprintf(uep->ep_name, EP_NAME_SIZE, "ep%d", i);
 
 		uep->ep.name		= uep->ep_name;

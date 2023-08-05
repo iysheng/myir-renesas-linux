@@ -68,6 +68,7 @@ struct usb_ep *usb_ep_autoconfig_ss(
 {
 	struct usb_ep	*ep;
 
+	/* raz2.c struct usbhsg_gadget_ops 这个 usbhs 没有这个 match_ep 成员函数 */
 	if (gadget->ops->match_ep) {
 		ep = gadget->ops->match_ep(gadget, desc, ep_comp);
 		if (ep)
@@ -117,6 +118,7 @@ EXPORT_SYMBOL_GPL(usb_ep_autoconfig_ss);
 /**
  * usb_ep_autoconfig() - choose an endpoint matching the
  * descriptor
+ * 根据断点描述符申请端点
  * @gadget: The device to which the endpoint must belong.
  * @desc: Endpoint descriptor, with endpoint direction and transfer mode
  *	initialized.  For periodic transfers, the maximum packet

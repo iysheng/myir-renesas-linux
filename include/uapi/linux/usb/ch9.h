@@ -277,6 +277,7 @@ struct usb_ctrlrequest {
 #define USB_DT_CS_ENDPOINT		(USB_TYPE_CLASS | USB_DT_ENDPOINT)
 
 /* All standard descriptors have these 2 fields at the beginning */
+/* 这是一个通用的 usb 描述符的头部 */
 struct usb_descriptor_header {
 	__u8  bLength;
 	__u8  bDescriptorType;

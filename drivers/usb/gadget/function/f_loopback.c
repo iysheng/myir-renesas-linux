@@ -6,7 +6,7 @@
  * Copyright (C) 2008 by Nokia Corporation
  */
 
-/* #define VERBOSE_DEBUG */
+#define VERBOSE_DEBUG
 
 #include <linux/slab.h>
 #include <linux/kernel.h>
@@ -165,7 +165,7 @@ static struct usb_gadget_strings *loopback_strings[] = {
 };
 
 /*-------------------------------------------------------------------------*/
-
+/* loopback 功能的绑定函数，这个是核心 */
 static int loopback_bind(struct usb_configuration *c, struct usb_function *f)
 {
 	struct usb_composite_dev *cdev = c->cdev;
@@ -177,16 +177,19 @@ static int loopback_bind(struct usb_configuration *c, struct usb_function *f)
 	id = usb_interface_id(c, f);
 	if (id < 0)
 		return id;
+	/* 填充接口描述符对应在配置描述符中的 id，从 0 开始 */
 	loopback_intf.bInterfaceNumber = id;
 
 	id = usb_string_id(cdev);
 	if (id < 0)
 		return id;
 	strings_loopback[0].id = id;
+	/* 填充盖接口字符串索引值 */
 	loopback_intf.iInterface = id;
 
 	/* allocate endpoints */
 
+	/* 根据断点描述符的信息，分配一个 usb_ep 结构体示例，申请一个 in_ep */
 	loop->in_ep = usb_ep_autoconfig(cdev->gadget, &fs_loop_source_desc);
 	if (!loop->in_ep) {
 autoconf_fail:
@@ -195,10 +198,12 @@ autoconf_fail:
 		return -ENODEV;
 	}
 
+	/* 根据断点描述符的信息，分配一个 usb_ep 结构体示例，申请一个 out_ep */
 	loop->out_ep = usb_ep_autoconfig(cdev->gadget, &fs_loop_sink_desc);
 	if (!loop->out_ep)
 		goto autoconf_fail;
 
+	/* 分别使用 fullspeed endpoint 的地址填充 highspeed 和 supper speed */
 	/* support high speed hardware */
 	hs_loop_source_desc.bEndpointAddress =
 		fs_loop_source_desc.bEndpointAddress;
@@ -235,12 +240,14 @@ static void lb_free_func(struct usb_function *f)
 	kfree(func_to_loop(f));
 }
 
+/* 收据收发包的回调函数 */
 static void loopback_complete(struct usb_ep *ep, struct usb_request *req)
 {
 	struct f_loopback	*loop = ep->driver_data;
 	struct usb_composite_dev *cdev = loop->function.config->cdev;
 	int			status = req->status;
 
+	VDBG(cdev, "red dbg gadget loopback function\n");
 	switch (status) {
 	case 0:				/* normal completion? */
 		if (ep == loop->out_ep) {
@@ -334,6 +341,7 @@ static int alloc_requests(struct usb_composite_dev *cdev,
 		if (!out_req)
 			goto fail_in;
 
+		/* 设置回调 */
 		in_req->complete = loopback_complete;
 		out_req->complete = loopback_complete;
 
@@ -415,6 +423,7 @@ static int loopback_set_alt(struct usb_function *f,
 
 	/* we know alt is zero */
 	disable_loopback(loop);
+	/* 使能 loopback */
 	return enable_loopback(cdev, loop);
 }
 

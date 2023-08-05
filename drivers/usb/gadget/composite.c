@@ -468,10 +468,13 @@ EXPORT_SYMBOL_GPL(usb_function_activate);
 int usb_interface_id(struct usb_configuration *config,
 		struct usb_function *function)
 {
+	/* 一般地，这个 id 默认都是 0 */
 	unsigned id = config->next_interface_id;
 
 	if (id < MAX_CONFIG_INTERFACES) {
+		/* 把这个 usb_function 指针添加到接口描述符指针数组上 */
 		config->interface[id] = function;
+		/* 对这个 usb_configuration 配置描述符的 id 进行加 1 */
 		config->next_interface_id = id + 1;
 		return id;
 	}
@@ -958,7 +961,9 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 	list_add_tail(&config->list, &cdev->configs);
 
 	INIT_LIST_HEAD(&config->functions);
-	/* 清空配置描述符的接口描述符信息 */
+	/* 清空配置描述符的接口描述符信息
+	 * 修改这个配置描述符的接口 id 信息
+	 * */
 	config->next_interface_id = 0;
 	memset(config->interface, 0, sizeof(config->interface));
 

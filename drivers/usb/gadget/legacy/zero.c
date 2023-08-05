@@ -426,6 +426,7 @@ static int zero_bind(struct usb_composite_dev *cdev)
 	if (status)
 		goto err_free_otg_desc;
 
+	/* 复位 gadget ep 的状态 */
 	usb_ep_autoconfig_reset(cdev->gadget);
 	status = usb_add_function(&loopback_driver, func_lb);
 	if (status)
