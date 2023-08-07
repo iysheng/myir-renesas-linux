@@ -11,6 +11,7 @@ ifneq ($(CONFIG_USB_RENESAS_USBHS_HCD),)
 	renesas_usbhs-y		+= mod_host.o
 endif
 
+# 通过宏控制这里是否编译
 ifneq ($(CONFIG_USB_RENESAS_USBHS_UDC),)
 	renesas_usbhs-y		+= mod_gadget.o
 endif
