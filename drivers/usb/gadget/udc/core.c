@@ -1423,7 +1423,9 @@ static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *dri
 
 	usb_gadget_udc_set_speed(udc, driver->max_speed);
 
-	/* 调用 gadget driver 的 bind 函数 */
+	/* 调用 gadget driver 的 bind 函数
+	 * composite_driver_template.bind 函数 composite_bind
+	 * */
 	ret = driver->bind(udc->gadget, driver);
 	if (ret)
 		goto err1;
@@ -1457,7 +1459,10 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 		return -EINVAL;
 
 	mutex_lock(&udc_lock);
-	/* 如果 usb_gadget_driver 的 udc_name 存在, 从 udc_list 链表中查找这个 udc */
+	/* 如果 usb_gadget_driver 的 udc_name 存在, 从 udc_list 链表中查找这个 udc
+	 * 一般地都不会包含这个 udc_name , 所以会从内核对应那个的 udc_list 中查找第一个
+	 * udc
+	 * */
 	if (driver->udc_name) {
 		list_for_each_entry(udc, &udc_list, list) {
 			ret = strcmp(driver->udc_name, dev_name(&udc->dev));
@@ -1472,9 +1477,12 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 			/* 如果找到了对应的 udc 驱动 */
 			goto found;
 	} else {
-		/* 否则的话查找第一个有效的 udc 驱动 */
+		/* 一般都会走到这里，即查找第一个有效的 udc 驱动 */
 		list_for_each_entry(udc, &udc_list, list) {
 			/* For now we take the first one */
+			/* 如果还没有一个 usb_gadget_driver 绑定到这个 udc
+			 * 那么表示找到有效的 udc
+			 * */
 			if (!udc->driver)
 				goto found;
 		}
@@ -1491,6 +1499,7 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 	}
 
 	mutex_unlock(&udc_lock);
+	/* 所以，如果 udc 驱动没有加载，那么就无法找到这个 udc ，就不会继续向下 probe */
 	if (ret)
 		pr_warn("udc-core: couldn't find an available UDC or it's busy\n");
 	return ret;

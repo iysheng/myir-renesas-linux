@@ -116,6 +116,7 @@ found_ep:
 EXPORT_SYMBOL_GPL(usb_ep_autoconfig_ss);
 
 /**
+ * 根据传递的端点描述符，申请一个端点
  * usb_ep_autoconfig() - choose an endpoint matching the
  * descriptor
  * 根据断点描述符申请端点

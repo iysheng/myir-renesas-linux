@@ -1650,6 +1650,7 @@ static int fill_ext_prop(struct usb_configuration *c, int interface, u8 *buf)
 }
 
 /*
+ * 回调这个 setup 的回调函数
  * The setup() callback implements all the ep0 functionality that's
  * not handled lower down, in hardware or the hardware driver(like
  * device and endpoint feature flags, and their status).  It's all
@@ -1674,10 +1675,12 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 	 * gadget might need to intercept e.g. a control-OUT completion
 	 * when we delegate to it.
 	 */
+	/* 填充一个 usb 的 req */
 	req->zero = 0;
 	req->context = cdev;
 	req->complete = composite_setup_complete;
 	req->length = 0;
+	/* 填充控制端点的数据 */
 	gadget->ep0->driver_data = cdev;
 
 	/*
@@ -1690,6 +1693,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 	switch (ctrl->bRequest) {
 
 	/* we handle all standard USB descriptors */
+	/* 获取配置描述符，这里又分为多种（4种）类型的描述符 */
 	case USB_REQ_GET_DESCRIPTOR:
 		if (ctrl->bRequestType != USB_DIR_IN)
 			goto unknown;
@@ -1778,6 +1782,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 		break;
 
 	/* any number of configs can work */
+	/* 设置配置 */
 	case USB_REQ_SET_CONFIGURATION:
 		if (ctrl->bRequestType != 0)
 			goto unknown;
@@ -1804,6 +1809,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 		break;
 
 	/* function drivers must handle get/set altsetting */
+	/* 设置接口 */
 	case USB_REQ_SET_INTERFACE:
 		if (ctrl->bRequestType != USB_RECIP_INTERFACE)
 			goto unknown;
@@ -1822,6 +1828,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			break;
 
 		spin_lock(&cdev->lock);
+		/* 回调 usb_function 的 set_alt 函数 */
 		value = f->set_alt(f, w_index, w_value);
 		if (value == USB_GADGET_DELAYED_STATUS) {
 			DBG(cdev,
@@ -1913,6 +1920,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 		}
 		break;
 	default:
+		/* 如果接收到 host 发出了无法识别的请求会走到这里 */
 unknown:
 		/*
 		 * OS descriptors handling
@@ -2179,6 +2187,7 @@ int composite_dev_prepare(struct usb_composite_driver *composite,
 	int ret = -ENOMEM;
 
 	/* preallocate control response and buffer */
+	/* 预申请一个控制请求以及缓冲区 */
 	cdev->req = usb_ep_alloc_request(gadget->ep0, GFP_KERNEL);
 	if (!cdev->req)
 		return -ENOMEM;
@@ -2191,6 +2200,7 @@ int composite_dev_prepare(struct usb_composite_driver *composite,
 	if (ret)
 		goto fail_dev;
 
+	/* 设置这个设备的回调函数 */
 	cdev->req->complete = composite_setup_complete;
 	cdev->req->context = cdev;
 	gadget->ep0->driver_data = cdev;
@@ -2296,6 +2306,9 @@ static int composite_bind(struct usb_gadget *gadget,
 	struct usb_composite_driver	*composite = to_cdriver(gdriver);
 	int				status = -ENOMEM;
 
+	/* 申请一个 usb_composite_dev 设备,这里根据定义的 usb_gadget_driver
+	 * 就创建了一个新的 struct usb_composite_dev
+	 * */
 	cdev = kzalloc(sizeof *cdev, GFP_KERNEL);
 	if (!cdev)
 		return status;
@@ -2303,6 +2316,7 @@ static int composite_bind(struct usb_gadget *gadget,
 	spin_lock_init(&cdev->lock);
 	cdev->gadget = gadget;
 	set_gadget_data(gadget, cdev);
+	/* 初始化这个 cdev->configs 的配置(配置描述符)链表 */
 	INIT_LIST_HEAD(&cdev->configs);
 	INIT_LIST_HEAD(&cdev->gstrings);
 
@@ -2314,6 +2328,10 @@ static int composite_bind(struct usb_gadget *gadget,
 	 * serial number), register function drivers, potentially update
 	 * power state and consumption, etc
 	 */
+	/*
+	 * 在这里才会执行定义的 usb_composite_driver 结构体的 bind 成员函数
+	 * 比如 zero_driver 的 zero_bind
+	 * */
 	status = composite->bind(cdev);
 	if (status < 0)
 		goto fail;
@@ -2419,7 +2437,7 @@ static const struct usb_gadget_driver composite_driver_template = {
 };
 
 /**
- * 注册一个 usb 复合驱动
+ * 注册一个 usb 复合驱动,因为在注册时候就会尝试去 probe,所以这里用 _probe 起名字
  * usb_composite_probe() - register a composite driver
  * @driver: the driver to register
  *
@@ -2451,8 +2469,10 @@ int usb_composite_probe(struct usb_composite_driver *driver)
 	gadget_driver = &driver->gadget_driver;
 
 	/* 使用 usb_composite_driver 的名字覆盖模板的功能 */
+	/* 使用 usb_composite_driver 的部分内容填充 usb_gadget_driver */
 	gadget_driver->function =  (char *) driver->name;
 	/* 使用 usb_composite_driver 的名字覆盖 device_driver 的名字 */
+	/* 这个 driver.name 应该和 usb probe 没什么关系 */
 	gadget_driver->driver.name = driver->name;
 	/* 使用 usb_composite_driver 的最大速度覆盖 usb_gadget_driver 的最大速度 */
 	gadget_driver->max_speed = driver->max_speed;

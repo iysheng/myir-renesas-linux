@@ -280,7 +280,9 @@ module_param_named(ss_iso_qlen, gzero_options.ss_iso_qlen, uint,
 		S_IRUGO|S_IWUSR);
 MODULE_PARM_DESC(iso_qlen, "depth of sourcesink queue for iso transfer");
 
-/* usb 复合设备的绑定函数 */
+/* usb 复合设备的绑定函数
+ * 在 composite_bind 函数中会回调到对应的 usb_composite_driver 的 bind 成员函数
+ * */
 static int zero_bind(struct usb_composite_dev *cdev)
 {
 	struct f_ss_opts	*ss_opts;
@@ -289,7 +291,7 @@ static int zero_bind(struct usb_composite_dev *cdev)
 
 	/* Allocate string descriptor numbers ... note that string
 	 * contents can be overridden by the composite_dev glue.
-	 * 填充 strings_dev 的 id 参数
+	 * 根据 cdev 的 id 信息填充 strings_dev 的 id 值
 	 */
 	status = usb_string_ids_tab(cdev, strings_dev);
 	if (status < 0)
@@ -297,6 +299,7 @@ static int zero_bind(struct usb_composite_dev *cdev)
 
 	/*
 	 * 使用字符串中的 id 信息填充设备描述符中对应的编号（0表示没有对应的这个属性的字符串描述符）
+	 * 后续可以根据这个 id 信息，查找对应的厂家，产品以及序列号对应的字符串索引
 	 * */
 	device_desc.iManufacturer = strings_dev[USB_GADGET_MANUFACTURER_IDX].id;
 	device_desc.iProduct = strings_dev[USB_GADGET_PRODUCT_IDX].id;
@@ -408,6 +411,7 @@ static int zero_bind(struct usb_composite_dev *cdev)
 
 	/* Register primary, then secondary configuration.  Note that
 	 * SH3 only allows one config...
+	 * 这里只是将这个 usb_configuration 添加到 cdev 这个链表上，并对这个 usb_configuration 进行了初始化
 	 */
 	if (loopdefault) {
 		usb_add_config_only(cdev, &loopback_driver);
@@ -478,7 +482,10 @@ static struct usb_composite_driver zero_driver = {
 	.name		= "zero",
 	.dev		= &device_desc,
 	.strings	= dev_strings,
-	/* 最大的 USB 速度 */
+	/* 最大的 USB 速度,在函数 usb_composite_probe 中会用
+	 * usb_composite_driver 的 max_speed 参数覆盖 usb_gadget_driver 中的
+	 * max_speed 参数
+	 * */
 	.max_speed	= USB_SPEED_SUPER,
 	/* 绑定，解绑，抑制和回复函数接口 */
 	.bind		= zero_bind,

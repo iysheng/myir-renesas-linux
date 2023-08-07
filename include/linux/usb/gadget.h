@@ -628,6 +628,7 @@ static inline int usb_gadget_activate(struct usb_gadget *gadget)
 /* usb gadget driver 抽象 */
 /**
  * struct usb_gadget_driver - driver for usb gadget devices
+ * 描述 gadget 功能描述字符串描述
  * @function: String describing the gadget's function
  * @max_speed: Highest speed the driver handles.
  * @setup: Invoked for ep0 control requests that aren't handled by

@@ -59,6 +59,7 @@ void usbhs_pkt_push(struct usbhs_pipe *pipe, struct usbhs_pkt *pkt,
 	/********************  spin lock ********************/
 	usbhs_lock(priv, flags);
 
+	/* pipe 的 handler 不能为空 */
 	if (!pipe->handler) {
 		dev_err(dev, "no handler function\n");
 		pipe->handler = &usbhsf_null_handler;
@@ -73,6 +74,7 @@ void usbhs_pkt_push(struct usbhs_pipe *pipe, struct usbhs_pkt *pkt,
 	 */
 	pkt->pipe	= pipe;
 	pkt->buf	= buf;
+	/* 填充 handler */
 	pkt->handler	= pipe->handler;
 	pkt->length	= len;
 	pkt->zero	= zero;
@@ -153,6 +155,7 @@ enum {
 	USBHSF_PKT_DMA_DONE,
 };
 
+/* usbhs 的 pkg 处理函数入口 */
 static int usbhsf_pkt_handler(struct usbhs_pipe *pipe, int type)
 {
 	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
@@ -1418,6 +1421,7 @@ void usbhs_fifo_init(struct usbhs_priv *priv)
 	struct usbhs_fifo *dfifo;
 	int i;
 
+	/* 竟然在 fifo_init 函数中初始化的 irq_empty 和 irq_ready */
 	mod->irq_empty		= usbhsf_irq_empty;
 	mod->irq_ready		= usbhsf_irq_ready;
 	mod->irq_bempsts	= 0;

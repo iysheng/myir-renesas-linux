@@ -148,7 +148,7 @@ static struct usb_descriptor_header *ss_loopback_descs[] = {
 };
 
 /* function-specific strings: */
-
+/* 描述这个接口的功能字符串描述符 */
 static struct usb_string strings_loopback[] = {
 	[0].s = "loop input to output",
 	{  }			/* end of list */
@@ -174,17 +174,19 @@ static int loopback_bind(struct usb_configuration *c, struct usb_function *f)
 	int ret;
 
 	/* allocate interface ID(s) */
+	/* 申请一个接口的 id */
 	id = usb_interface_id(c, f);
 	if (id < 0)
 		return id;
 	/* 填充接口描述符对应在配置描述符中的 id，从 0 开始 */
 	loopback_intf.bInterfaceNumber = id;
 
+	/* 获取字符串 id 的空闲索引值 */
 	id = usb_string_id(cdev);
 	if (id < 0)
 		return id;
 	strings_loopback[0].id = id;
-	/* 填充盖接口字符串索引值 */
+	/* 填充该接口字符串索引值 */
 	loopback_intf.iInterface = id;
 
 	/* allocate endpoints */
@@ -341,7 +343,7 @@ static int alloc_requests(struct usb_composite_dev *cdev,
 		if (!out_req)
 			goto fail_in;
 
-		/* 设置回调 */
+		/* 设置 usb request 的回调函数 */
 		in_req->complete = loopback_complete;
 		out_req->complete = loopback_complete;
 
@@ -392,6 +394,7 @@ enable_loopback(struct usb_composite_dev *cdev, struct f_loopback *loop)
 {
 	int					result = 0;
 
+	/* 分别使能两个端点 */
 	result = enable_endpoint(cdev, loop, loop->in_ep);
 	if (result)
 		goto out;
@@ -415,6 +418,7 @@ out:
 	return result;
 }
 
+/* 在设置接口的过程中会回调这个函数 */
 static int loopback_set_alt(struct usb_function *f,
 		unsigned intf, unsigned alt)
 {
@@ -456,7 +460,10 @@ static struct usb_function *loopback_alloc(struct usb_function_instance *fi)
 
 	/* 初始化 usb_function 结构体 */
 	loop->function.name = "loopback";
-	/* 这个 loopback_bind 函数可能比较重要 */
+	/* 这个 loopback_bind 函数可能比较重要
+	 * 在执行 usb_composite_driver 的 bind 函数的时候会通过 usb_add_function
+	 * 函数回调到具体这个 function 的 bind 函数
+	 * */
 	loop->function.bind = loopback_bind;
 	loop->function.set_alt = loopback_set_alt;
 	loop->function.disable = loopback_disable;

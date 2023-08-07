@@ -617,6 +617,7 @@ static int usbhsg_ep_enable(struct usb_ep *ep,
 		 * It will use pio handler if impossible.
 		 */
 		if (usb_endpoint_dir_in(desc)) {
+			/* pipe 的 handler 是动态填充的，不是固定不变的 */
 			pipe->handler = &usbhs_fifo_dma_push_handler;
 		} else {
 			pipe->handler = &usbhs_fifo_dma_pop_handler;
@@ -931,6 +932,7 @@ static int usbhsm_phy_get_vbus(struct platform_device *pdev)
 	return  gpriv->vbus_active;
 }
 
+/* 填充 struct usbhs_priv 的 mod_info 信息 */
 static void usbhs_mod_phy_mode(struct usbhs_priv *priv)
 {
 	struct usbhs_mod_info *info = &priv->mod_info;
@@ -1134,6 +1136,7 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
 	usbhs_mod_register(priv, &gpriv->mod, USBHS_GADGET);
 
 	/* init gpriv */
+	/* 填充的是这些函数指针 */
 	gpriv->mod.name		= "gadget";
 	gpriv->mod.start	= usbhsg_start;
 	gpriv->mod.stop		= usbhsg_stop;
