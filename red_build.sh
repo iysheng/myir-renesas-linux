@@ -2,7 +2,12 @@
 
 function do_build
 {
-    make ARCH=arm64 Image dtbs -j3
+    make ARCH=arm64 Image dtbs modules -j3
+}
+
+function do_build_modules
+{
+    make ARCH=arm64 modules -j3
 }
 
 function do_menuconfig
@@ -53,11 +58,11 @@ else
 case $1
 	in
 	b) do_build;;
+	m) do_build_modules;;
 	c) do_menuconfig;;
 	d) do_dtb2dts;;
 	e) echo "init enviroment"; export PATH=/usr/bin:$PATH; unset LD_LIBRARY_PATH; source ../toolchain/sdk/red_core/environment-setup-aarch64-poky-linux;;
 	g) do_genpatch;;
-	#m) do_mergepatch;;
 	u) do_copy;;
 	*) echo "No support this param $1";do_help;;
 esac
