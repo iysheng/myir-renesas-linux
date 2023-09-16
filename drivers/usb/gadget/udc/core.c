@@ -1465,6 +1465,7 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 	 * */
 	if (driver->udc_name) {
 		list_for_each_entry(udc, &udc_list, list) {
+			printk("driver:%s udc:%s\n", driver->udc_name, dev_name(&udc->dev));
 			ret = strcmp(driver->udc_name, dev_name(&udc->dev));
 			if (!ret)
 				break;

@@ -9,6 +9,10 @@ ccflags-y			+= -I$(srctree)/drivers/usb/gadget/udc/
 # USB Functions
 usb_f_acm-y			:= f_acm.o
 obj-$(CONFIG_USB_F_ACM)		+= usb_f_acm.o
+
+usb_f_bmp-y			:= f_bmp.o
+obj-$(CONFIG_USB_F_BMP)	+= usb_f_bmp.o
+
 usb_f_ss_lb-y			:= f_loopback.o f_sourcesink.o
 obj-$(CONFIG_USB_F_SS_LB)	+= usb_f_ss_lb.o
 obj-$(CONFIG_USB_U_SERIAL)	+= u_serial.o

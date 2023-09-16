@@ -106,6 +106,7 @@ struct gs_port {
 
 	u8			port_num;
 
+	/* 这一段是和读取有关的内容 */
 	struct list_head	read_pool;
 	int read_started;
 	int read_allocated;
@@ -345,6 +346,17 @@ __acquires(&port->port_lock)
 	return port->read_started;
 }
 
+static void show_hex(char *buf, int len, char *title)
+{
+	int i = 0;
+	printk("[%s@%d]{", title, len);
+	for (; i < len; i++)
+	{
+		printk("%u ", buf[i]);
+	}
+	printk("}");
+}
+
 /*
  * RX tasklet takes data out of the RX queue and hands it up to the TTY
  * layer until it refuses to take any more data (or is throttled back).
@@ -372,6 +384,7 @@ static void gs_rx_push(struct work_struct *work)
 
 		req = list_first_entry(queue, struct usb_request, list);
 
+		printk("%s %d red\n", __func__, __LINE__);
 		/* leave data queued if tty was rx throttled */
 		if (tty && tty_throttled(tty))
 			break;
@@ -406,6 +419,7 @@ static void gs_rx_push(struct work_struct *work)
 				size -= n;
 			}
 
+			show_hex(packet, size, "red");
 			count = tty_insert_flip_string(&port->port, packet,
 					size);
 			if (count)
@@ -1148,6 +1162,7 @@ gs_port_alloc(unsigned port_num, struct usb_cdc_line_coding *coding)
 		goto out;
 	}
 
+	/* 初始化 gs_port 空间，并将这个实例关联到 portmaster 全局数组中 */
 	port = kzalloc(sizeof(struct gs_port), GFP_KERNEL);
 	if (port == NULL) {
 		ret = -ENOMEM;
@@ -1159,6 +1174,7 @@ gs_port_alloc(unsigned port_num, struct usb_cdc_line_coding *coding)
 	init_waitqueue_head(&port->drain_wait);
 	init_waitqueue_head(&port->close_wait);
 
+	/* 初始化 push 这个 delayed_work，这个函数读数据的吧？ */
 	INIT_DELAYED_WORK(&port->push, gs_rx_push);
 
 	INIT_LIST_HEAD(&port->read_pool);
@@ -1241,6 +1257,7 @@ int gserial_alloc_line_no_console(unsigned char *line_num)
 	/* ... and sysfs class devices, so mdev/udev make /dev/ttyGS* */
 
 	port = ports[port_num].port;
+	/* 注册申请出来的 tty_port 设备,关联的接口函数是 gs_tty_driver */
 	tty_dev = tty_port_register_device(&port->port,
 			gs_tty_driver, port_num, NULL);
 	if (IS_ERR(tty_dev)) {
@@ -1315,6 +1332,7 @@ int gserial_connect(struct gserial *gser, u8 port_num)
 	status = usb_ep_enable(gser->in);
 	if (status < 0)
 		return status;
+	/* 将 gs_port 关联到 ep 的 driver_data 中 */
 	gser->in->driver_data = port;
 
 	status = usb_ep_enable(gser->out);
@@ -1325,11 +1343,13 @@ int gserial_connect(struct gserial *gser, u8 port_num)
 	/* then tell the tty glue that I/O can work */
 	spin_lock_irqsave(&port->port_lock, flags);
 	gser->ioport = port;
+	/* 这里关联的 gserial 到 port_usb */
 	port->port_usb = gser;
 
 	/* REVISIT unclear how best to handle this state...
 	 * we don't really couple it with the Linux TTY.
 	 */
+	/* 同步端口号 */
 	gser->port_line_coding = port->port_line_coding;
 
 	/* REVISIT if waiting on "carrier detect", signal. */
@@ -1455,7 +1475,7 @@ static int userial_init(void)
 		return -ENOMEM;
 
 	gs_tty_driver->driver_name = "g_serial";
-	gs_tty_driver->name = "ttyGS";
+	gs_tty_driver->name = "ttyBMP";
 	/* uses dynamically assigned dev_t values */
 
 	gs_tty_driver->type = TTY_DRIVER_TYPE_SERIAL;
@@ -1472,6 +1492,7 @@ static int userial_init(void)
 	gs_tty_driver->init_termios.c_ispeed = 9600;
 	gs_tty_driver->init_termios.c_ospeed = 9600;
 
+	/* 关联 tty 的操作函数集合 */
 	tty_set_operations(gs_tty_driver, &gs_tty_ops);
 	for (i = 0; i < MAX_U_SERIAL_PORTS; i++)
 		mutex_init(&ports[i].lock);

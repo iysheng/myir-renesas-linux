@@ -36,6 +36,16 @@
 
 menu "USB Gadget precomposed configurations"
 
+config USB_BMP
+	tristate "Gadget BlackMagicProbe(DEVELOPMENT)"
+	select USB_LIBCOMPOSITE
+	select USB_F_BMP
+	help
+	  Gadget BlackMagicProbe is a device for bebug other chips by CMSIS.
+
+	  Say "y" to link the driver statically, or "m" to build a
+	  dynamically linked module called "g_bmp".
+
 config USB_ZERO
 	tristate "Gadget Zero (DEVELOPMENT)"
 	select USB_LIBCOMPOSITE

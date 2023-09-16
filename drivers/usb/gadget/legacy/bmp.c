@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * serial.c -- USB gadget serial driver
- * USB gadget 串口驱动
+ *
  * Copyright (C) 2003 Al Borchers (alborchers@steinerpoint.com)
  * Copyright (C) 2008 by David Brownell
  * Copyright (C) 2008 by Nokia Corporation
+ * Copyright (C) 2023 by Yang Yongsheng
  */
 
 #include <linux/kernel.h>
@@ -18,11 +19,11 @@
 
 /* Defines */
 
-#define GS_VERSION_STR			"v2.4"
-#define GS_VERSION_NUM			0x2400
+#define GBMP_VERSION_STR			"v0.9"
+#define GBMP_VERSION_NUM			0x0009
 
-#define GS_LONG_NAME			"Gadget Serial Wow"
-#define GS_VERSION_NAME			GS_LONG_NAME " " GS_VERSION_STR
+#define GBMP_LONG_NAME			"Black Magic Probe"
+#define GBMP_VERSION_NAME			GBMP_LONG_NAME " " GBMP_VERSION_STR
 
 /*-------------------------------------------------------------------------*/
 USB_GADGET_COMPOSITE_OPTIONS();
@@ -32,39 +33,31 @@ USB_GADGET_COMPOSITE_OPTIONS();
 * DO NOT REUSE THESE IDs with a protocol-incompatible driver!!  Ever!!
 * Instead:  allocate your own, using normal USB-IF procedures.
 */
-#define GS_VENDOR_ID			0x0525	/* NetChip */
-#define GS_PRODUCT_ID			0xa4a6	/* Linux-USB Serial Gadget */
-#define GS_CDC_PRODUCT_ID		0xa4a7	/* ... as CDC-ACM */
-#define GS_CDC_OBEX_PRODUCT_ID		0xa4a9	/* ... as CDC-OBEX */
+#define GBMP_VENDOR_ID			0x1d50	/* NetChip */
+#define GBMP_PRODUCT_ID			0x6018	/* Linux-USB Serial Gadget */
 
 /* string IDs are assigned dynamically */
 
 #define STRING_DESCRIPTION_IDX		USB_GADGET_FIRST_AVAIL_IDX
 
-/* usb 字符串描述符 */
 static struct usb_string strings_dev[] = {
 	[USB_GADGET_MANUFACTURER_IDX].s = "Red Inc",
-	[USB_GADGET_PRODUCT_IDX].s = GS_VERSION_NAME,
-	[USB_GADGET_SERIAL_IDX].s = "",
+	[USB_GADGET_PRODUCT_IDX].s = GBMP_VERSION_NAME,
+	[USB_GADGET_SERIAL_IDX].s = "1236547890",
 	[STRING_DESCRIPTION_IDX].s = NULL /* updated; f(use_acm) */,
 	{  } /* end of list */
 };
 
 static struct usb_gadget_strings stringtab_dev = {
-	/* 语言 ID */
 	.language	= 0x0409,	/* en-us */
 	.strings	= strings_dev,
 };
 
-/* 字符串描述符 */
 static struct usb_gadget_strings *dev_strings[] = {
 	&stringtab_dev,
 	NULL,
 };
 
-/*
- * 设备描述符实例
- * */
 static struct usb_device_descriptor device_desc = {
 	.bLength =		USB_DT_DEVICE_SIZE,
 	.bDescriptorType =	USB_DT_DEVICE,
@@ -73,12 +66,11 @@ static struct usb_device_descriptor device_desc = {
 	.bDeviceSubClass =	0,
 	.bDeviceProtocol =	0,
 	/* .bMaxPacketSize0 = f(hardware) */
-	.idVendor =		cpu_to_le16(GS_VENDOR_ID),
+	.idVendor =		cpu_to_le16(GBMP_VENDOR_ID),
 	/* .idProduct =	f(use_acm) */
-	.bcdDevice = cpu_to_le16(GS_VERSION_NUM),
+	.bcdDevice = cpu_to_le16(GBMP_VERSION_NUM),
 	/* .iManufacturer = DYNAMIC */
 	/* .iProduct = DYNAMIC */
-	/* 包含的配置描述符数量 */
 	.bNumConfigurations =	1,
 };
 
@@ -87,56 +79,20 @@ static const struct usb_descriptor_header *otg_desc[2];
 /*-------------------------------------------------------------------------*/
 
 /* Module */
-MODULE_DESCRIPTION(GS_VERSION_NAME);
-MODULE_AUTHOR("Al Borchers");
-MODULE_AUTHOR("David Brownell");
+MODULE_DESCRIPTION(GBMP_VERSION_NAME);
+MODULE_AUTHOR("Yang Yongsheng");
 MODULE_LICENSE("GPL");
 
-/* 内核参数，默认使用 acm */
 static bool use_acm = true;
 module_param(use_acm, bool, 0);
 MODULE_PARM_DESC(use_acm, "Use CDC ACM, default=yes");
-
-static bool use_obex = false;
-module_param(use_obex, bool, 0);
-MODULE_PARM_DESC(use_obex, "Use CDC OBEX, default=no");
 
 static unsigned n_ports = 1;
 module_param(n_ports, uint, 0);
 MODULE_PARM_DESC(n_ports, "number of ports to create, default=1");
 
-static bool enable = true;
-
-static int switch_gserial_enable(bool do_enable);
-
-static int enable_set(const char *s, const struct kernel_param *kp)
-{
-	bool do_enable;
-	int ret;
-
-	if (!s)	/* called for no-arg enable == default */
-		return 0;
-
-	ret = strtobool(s, &do_enable);
-	if (ret || enable == do_enable)
-		return ret;
-
-	ret = switch_gserial_enable(do_enable);
-	if (!ret)
-		enable = do_enable;
-
-	return ret;
-}
-
-static const struct kernel_param_ops enable_ops = {
-	.set = enable_set,
-	.get = param_get_bool,
-};
-
-module_param_cb(enable, &enable_ops, &enable, 0644);
-
 /*-------------------------------------------------------------------------*/
-/* USB 配置 */
+
 static struct usb_configuration serial_config_driver = {
 	/* .label = f(use_acm) */
 	/* .bConfigurationValue = f(use_acm) */
@@ -231,20 +187,14 @@ static int gs_bind(struct usb_composite_dev *cdev)
 	/* register our configuration */
 	if (use_acm) {
 		status  = serial_register_ports(cdev, &serial_config_driver,
-				"acm");
+				"bmp");
 		usb_ep_autoconfig_reset(cdev->gadget);
-	} else if (use_obex)
-		status = serial_register_ports(cdev, &serial_config_driver,
-				"obex");
-	else {
-		status = serial_register_ports(cdev, &serial_config_driver,
-				"gser");
 	}
 	if (status < 0)
 		goto fail1;
 
 	usb_composite_overwrite_options(cdev, &coverwrite);
-	INFO(cdev, "%s\n", GS_VERSION_NAME);
+	INFO(cdev, "%s\n", GBMP_VERSION_NAME);
 
 	return 0;
 fail1:
@@ -269,9 +219,8 @@ static int gs_unbind(struct usb_composite_dev *cdev)
 	return 0;
 }
 
-/* 声明 usb 复合驱动 */
 static struct usb_composite_driver gserial_driver = {
-	.name		= "g_serial",
+	.name		= "g_bmp",
 	.dev		= &device_desc,
 	.strings	= dev_strings,
 	.max_speed	= USB_SPEED_SUPER,
@@ -282,58 +231,26 @@ static struct usb_composite_driver gserial_driver = {
 	}
 };
 
-static int switch_gserial_enable(bool do_enable)
-{
-	if (!serial_config_driver.label)
-		/* init() was not called, yet */
-		return 0;
-
-	if (do_enable)
-		return usb_composite_probe(&gserial_driver);
-
-	usb_composite_unregister(&gserial_driver);
-	return 0;
-}
-
-/* 驱动入口函数 */
 static int __init init(void)
 {
 	/* We *could* export two configs; that'd be much cleaner...
 	 * but neither of these product IDs was defined that way.
-	 * 默认使用的就是 acm 接口配置
 	 */
 	if (use_acm) {
 		serial_config_driver.label = "CDC ACM config";
 		serial_config_driver.bConfigurationValue = 2;
 		device_desc.bDeviceClass = USB_CLASS_COMM;
 		device_desc.idProduct =
-				cpu_to_le16(GS_CDC_PRODUCT_ID);
-	} else if (use_obex) {
-		serial_config_driver.label = "CDC OBEX config";
-		serial_config_driver.bConfigurationValue = 3;
-		device_desc.bDeviceClass = USB_CLASS_COMM;
-		device_desc.idProduct =
-			cpu_to_le16(GS_CDC_OBEX_PRODUCT_ID);
-	} else {
-		serial_config_driver.label = "Generic Serial config";
-		serial_config_driver.bConfigurationValue = 1;
-		device_desc.bDeviceClass = USB_CLASS_VENDOR_SPEC;
-		device_desc.idProduct =
-				cpu_to_le16(GS_PRODUCT_ID);
+				cpu_to_le16(GBMP_PRODUCT_ID);
 	}
 	strings_dev[STRING_DESCRIPTION_IDX].s = serial_config_driver.label;
 
-	if (!enable)
-		return 0;
-
-	/* 显式注册这个串口驱动 */
 	return usb_composite_probe(&gserial_driver);
 }
 module_init(init);
 
 static void __exit cleanup(void)
 {
-	if (enable)
-		usb_composite_unregister(&gserial_driver);
+	usb_composite_unregister(&gserial_driver);
 }
 module_exit(cleanup);

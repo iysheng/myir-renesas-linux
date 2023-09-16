@@ -600,6 +600,7 @@ static int dwc3_ep0_delegate_req(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 	int ret;
 
 	spin_unlock(&dwc->lock);
+	/* 回调 gadget_driver 的 setup 函数，即 composite_driver_template 成员函数 */
 	ret = dwc->gadget_driver->setup(dwc->gadget, ctrl);
 	spin_lock(&dwc->lock);
 	return ret;
@@ -812,8 +813,10 @@ static void dwc3_ep0_inspect_setup(struct dwc3 *dwc,
 	}
 
 	if ((ctrl->bRequestType & USB_TYPE_MASK) == USB_TYPE_STANDARD)
+		/* 标准的 usb 请求处理 */
 		ret = dwc3_ep0_std_request(dwc, ctrl);
 	else
+		/* 可能和设备有关的 usb 请求处理 */
 		ret = dwc3_ep0_delegate_req(dwc, ctrl);
 
 	if (ret == USB_GADGET_DELAYED_STATUS)

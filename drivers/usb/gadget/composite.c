@@ -297,6 +297,7 @@ EXPORT_SYMBOL_GPL(config_ep_by_speed);
  * This function returns the value of the function's bind(), which is
  * zero for success else a negative errno value.
  */
+/* 添加接口到配置 */
 int usb_add_function(struct usb_configuration *config,
 		struct usb_function *function)
 {
@@ -323,6 +324,7 @@ int usb_add_function(struct usb_configuration *config,
 	/* REVISIT *require* function->bind? */
 	/* 在这里执行这个 usb_function 的 bind 函数*/
 	if (function->bind) {
+		/* 在这里的时候就回调接口的 bind  函数了 */
 		value = function->bind(config, function);
 		if (value < 0) {
 			list_del(&function->list);
@@ -860,10 +862,12 @@ static int set_config(struct usb_composite_dev *cdev,
 		goto done;
 
 	usb_gadget_set_state(gadget, USB_STATE_CONFIGURED);
+	/* 关联配置到设备 */
 	cdev->config = c;
 
 	/* Initialize all interfaces by setting them to altsetting zero. */
 	for (tmp = 0; tmp < MAX_CONFIG_INTERFACES; tmp++) {
+		/* 根据配置，可以找到关联的接口 */
 		struct usb_function	*f = c->interface[tmp];
 		struct usb_descriptor_header **descriptors;
 
@@ -891,6 +895,7 @@ static int set_config(struct usb_composite_dev *cdev,
 			set_bit(addr, f->endpoints);
 		}
 
+		/* 在这里，调用的接口的 set_alt 函数,默认设置的就是 0 号设置 */
 		result = f->set_alt(f, tmp, 0);
 		if (result < 0) {
 			DBG(cdev, "interface %d (%s/%p) alt 0 --> %d\n",
@@ -1775,6 +1780,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 						struct usb_otg_descriptor);
 
 				value = min_t(int, w_length, otg_desc_len);
+				/* 上报 config 的配置描述符 */
 				memcpy(req->buf, config->descriptors[0], value);
 			}
 			break;
@@ -2456,6 +2462,7 @@ static const struct usb_gadget_driver composite_driver_template = {
 int usb_composite_probe(struct usb_composite_driver *driver)
 {
 	struct usb_gadget_driver *gadget_driver;
+	char *udc_name_origin;
 
 	if (!driver || !driver->dev || !driver->bind)
 		return -EINVAL;
@@ -2465,7 +2472,16 @@ int usb_composite_probe(struct usb_composite_driver *driver)
 		driver->name = "composite";
 
 	/* 使用一个 gadget_driver 模板赋值给这个 usb_composite_driver */
-	driver->gadget_driver = composite_driver_template;
+	if (!driver->gadget_driver.udc_name)
+	{
+    	driver->gadget_driver = composite_driver_template;
+	}
+	else
+	{
+        udc_name_origin = driver->gadget_driver.udc_name;
+    	driver->gadget_driver = composite_driver_template;
+        driver->gadget_driver.udc_name = udc_name_origin;
+	}
 	gadget_driver = &driver->gadget_driver;
 
 	/* 使用 usb_composite_driver 的名字覆盖模板的功能 */
