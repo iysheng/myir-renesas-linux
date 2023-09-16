@@ -35,8 +35,10 @@ function do_copy
 {
 	echo "copy Image and dtb files to ../build"
 	fd --glob Image -IH -x cp -frv {} ../build
+	fd --glob Image -IH -x cp -frv {} /var/lib/tftpboot/
 	# 屏蔽掉 rzg2ul 芯片，这个芯片是单核 A55 的
 	fd -e dtb --exclude *rzg2ul* . arch/arm64/boot/dts/myir -IH -X cp -frv {} ../build
+	fd -e ko  . drivers/usb/gadget -IH -X cp -frv {} /var/lib/tftpboot/myir/gadget_kos
 }
 
 function do_help
