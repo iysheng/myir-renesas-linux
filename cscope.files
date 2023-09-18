@@ -3382,3 +3382,5 @@ drivers/usb/gadget/function/g_zero.h
 drivers/usb/misc/usbtest.c
 drivers/usb/gadget/function/f_sourcesink.c
 drivers/usb/gadget/function/f_loopback.c
+drivers/usb/gadget/function/f_bmp.c
+drivers/usb/gadget/legacy/bmp.c
